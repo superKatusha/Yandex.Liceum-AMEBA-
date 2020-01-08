@@ -48,6 +48,8 @@ class Window:
         self.hero_height = 0
         self.hero_width = 0
         self.bul_size = 10
+        self.enemy_height = 0
+        self.enemy_width = 0
 
     def input_map(self, name):
         self.map = []
@@ -62,6 +64,8 @@ class Window:
         self.block_size = self.width // self.map_size[0]
         self.hero_height = int(round(1 * self.block_size))
         self.hero_width = int(round(0.7 * self.block_size))
+        self.enemy_height = self.hero_height
+        self.enemy_width = self.hero_width
 
     def render(self):
         if menu:
@@ -87,6 +91,10 @@ class Window:
             for bullet in bullets:
                 screen.blit(pygame.transform.scale(sprites['box'],
                                                    (self.bul_size, self.bul_size)), [bullet.x, bullet.y])
+            for enemy in enemies:
+                screen.blit(pygame.transform.scale(sprites['enemy'],
+                                                   (self.enemy_width, self.enemy_height)),
+                            [enemy.x, enemy.y])
 
 
 class Hero(Window):
@@ -148,17 +156,36 @@ class Bullet(Window):
 
 
 class Enemy():
-    def __init__(self):
-        pass
+    def __init__(self, x, y):
+        self.speed = 1
+        self.x = x
+        self.y = y
 
+    def move(self):
+        destination = hero.get_pos()
+        dx = destination[0] - self.x
+        dy = destination[1] - self.y
+        if dy != 0 and dx != 0:
+            k = math.atan(dx / dy)
+            if destination[1] - self.y < 0:
+                dx, dy = -math.sin(k), -math.cos(k)
+            else:
+                dx, dy = math.sin(k), math.cos(k)
+        elif dx == 0:
+            dx, dy = 0, 1
+        elif dy == 0:
+            dx, dy = 1, 0
+        self.x += dx
+        self.y += dy
 
 pygame.init()
 a = ''
 FPS = 60
 size = width, height = 550, 550
-sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin1.png'), 'box': load_image('box.png'),
-           'black': load_image('black.jpg')}
+sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'), 'box': load_image('box.png'),
+           'black': load_image('black.jpg'), 'enemy': load_image('skin1.png')}
 bullets = []
+enemies = []
 screen = pygame.display.set_mode(size)
 window = Window(size)
 running = True
@@ -175,6 +202,13 @@ while running:
                     window.input_map(a + '.txt')
                     menu = False
                     hero = Hero()
+                    for i in range(window.map_size[1]):
+                        for j in range(window.map_size[0]):
+                            if window.map[i][j] == '-':
+                                x = j * window.block_size + window.block_size - window.enemy_width // 2
+                                y = i * window.block_size
+                                window.map[i][j] = '.'
+                                enemies.append(Enemy(x, y))
                 else:
                     print('несуществующая карта')
                     terminate()
@@ -199,7 +233,7 @@ while running:
                     move_down = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    speed = 2
+                    speed = 4
                     destination = list(event.pos)
                     cords = [hero.get_pos()[0] + window.hero_width // 2,
                              hero.get_pos()[1] + window.hero_height // 2]
@@ -228,6 +262,8 @@ while running:
         bullet.move()
         if not bullet.a:
             bullets.remove(bullet)
+    for enemy in enemies:
+        enemy.move()
     screen.fill((0, 0, 0))
     window.render()
     pygame.display.flip()
