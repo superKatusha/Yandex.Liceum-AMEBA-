@@ -35,7 +35,7 @@ def start_screen():
         line_rect = string_rendered.get_rect()
         screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
         text_coord[1] += line_rect[3] + 30
-    screen.blit(font.render('Ð’Ð’Ð•Ð”Ð˜Ð¢Ð• ÐÐÐ—Ð’ÐÐÐ˜Ð• ÐšÐÐ Ð¢Ð«', 1, (0, 0, 0)), [20, 300])
+    screen.blit(font.render('ÂÂÅÄÈÒÅ ÍÀÇÂÀÍÈÅ ÊÀÐÒÛ', 1, (0, 0, 0)), [20, 300])
 
 
 class Window:
@@ -173,12 +173,15 @@ class Bullet(Window):
         else:
             self.a = False
 
+    def get_pos(self):
+        return [self.x, self.y]
+
     def collision(self):
         x1 = int((self.x + self.speed * self.dx) // window.block_size)
         x2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
         y1 = int((self.y + self.speed * self.dy) // window.block_size)
         y2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
-        print(x1, x2, y1, y2)
+        #print(x1, x2, y1, y2)
         if (window.map[x1][y1] != '#' and window.map[x2][y1] != '#'
                 and window.map[x1][y2] != '#' and window.map[x2][y2]):
             return True
@@ -187,11 +190,24 @@ class Bullet(Window):
 
 class Enemy():
     def __init__(self, x, y):
+        self.hp = 1
         self.speed = 1
         self.x = x
         self.y = y
 
     def move(self):
+        deleted_bullets = []
+        for i in range(len(bullets)):
+            bulleter = bullets[i].get_pos()
+            #print(bulleter, self.x, self.y)
+            if round(bulleter[0]) in range(round(self.x), round(self.x) + 40) and round(bulleter[1]) in range(round(self.y), round(self.y) + 40):
+                damaged_sound1.play()
+                deleted_bullets.append(i)
+                self.hp -= 1
+        deleted_bullets = sorted(deleted_bullets)
+        for _ in deleted_bullets:
+            del bullets[_]
+        #print(deleted_bullets)
         destination = hero.get_pos()
         dx = destination[0] - self.x
         dy = destination[1] - self.y
@@ -201,12 +217,17 @@ class Enemy():
                 dx, dy = -math.sin(k), -math.cos(k)
             else:
                 dx, dy = math.sin(k), math.cos(k)
-        elif dx == 0:
+        elif dx == 0 and dy > 0:
             dx, dy = 0, 1
-        elif dy == 0:
+        elif dy == 0 and dx > 0:
             dx, dy = 1, 0
         self.x += dx
         self.y += dy
+        if self.hp < 1:
+            for i in range(len(enemies)):
+                if enemy == enemies[i]:
+                    del enemies[i]
+                    break
 
 
 pygame.init()
@@ -217,6 +238,9 @@ sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'box': load_image('box.png'),
            'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
            'trader': load_image('traider.png')}
+shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
+damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
+move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
 bullets = []
 enemies = []
 screen = pygame.display.set_mode(size)
@@ -245,7 +269,7 @@ while running:
                                 enemies.append(Enemy(x, y))
 
                 else:
-                    print('Ð½ÐµÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÑŽÑ‰Ð°Ñ ÐºÐ°Ñ€Ñ‚Ð°')
+                    print('íåñóùåñòâóþùàÿ êàðòà')
                     terminate()
         else:
             if event.type == pygame.KEYDOWN:
@@ -268,6 +292,7 @@ while running:
                     move_down = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
+                    shoot_sound1.play()
                     speed = 4
                     destination = list(event.pos)
                     cords = [hero.get_pos()[0] + window.hero_width // 2,
@@ -286,18 +311,23 @@ while running:
                         dx, dy = 1, 0
                     bullets.append(Bullet([dx, dy], cords, speed))
     if move_left:
+        move_sound1.play()
         hero.move(-2, 0)
     elif move_right:
+        move_sound1.play()
         hero.move(2, 0)
     if move_up:
+        move_sound1.play()
         hero.move(0, -2)
     elif move_down:
+        move_sound1.play()
         hero.move(0, 2)
     for bullet in bullets:
         bullet.move()
         if not bullet.a:
             bullets.remove(bullet)
     for enemy in enemies:
+        print(enemies)
         enemy.move()
     screen.fill((0, 0, 0))
     window.render()
