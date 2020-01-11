@@ -85,12 +85,12 @@ class Window:
                         screen.blit(pygame.transform.scale(sprites['black'],
                                                            (self.block_size, self.block_size)),
                                     [i * self.block_size, j * self.block_size])
-            screen.blit(pygame.transform.scale(sprites['trader'],
-                                               (self.hero_width, self.hero_height)),
-                        [hero.x, hero.y])
+            # screen.blit(pygame.transform.scale(sprites['trader'],
+            #                                    (self.hero_width, self.hero_height)),
+            #             [hero.x, hero.y])
             screen.blit(pygame.transform.scale(sprites['hero'],
                                                (self.hero_width, self.hero_height)),
-                        [hero.x, hero.y])
+                        hero.get_pos())
             for bullet in bullets:
                 screen.blit(pygame.transform.scale(sprites['box'],
                                                    (self.bul_size, self.bul_size)),
@@ -100,7 +100,43 @@ class Window:
                                                    (self.enemy_width, self.enemy_height)),
                             [enemy.x, enemy.y])
 
-class Trader(Window):
+
+def collision(ent, x, y):
+    [x1, y1, width, height] = ent.get_rect()
+    x1 += x
+    x2 = x1 + width
+    y1 += y
+    y2 = y1 + height
+    if (window.map[int(x1 // window.block_size)][int(y1 // window.block_size)] == '#' or
+            window.map[int(x2 // window.block_size)][int(y2 // window.block_size)] == '#'):
+        return 'wall'
+    for entity in entities:
+        if entity != ent:
+            [x21, y21, width2, height2] = entity.get_rect()
+            x22 = x21 + width2
+            y22 = y21 + height2
+            if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
+                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
+                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
+                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
+                return entity
+    return 'False'
+
+
+class Entity:
+    def __init__(self, rect, name):
+        [self.x_pos, self.y_pos, self.width, self.height] = rect
+        self.name = name
+
+    def get_rect(self):
+        return [self.x_pos, self.y_pos, self.width, self.height]
+
+    def move(self, x, y):
+        self.x_pos += x
+        self.y_pos += y
+
+
+class Trader(Entity):
     def __init__(self):
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
@@ -114,7 +150,6 @@ class Trader(Window):
         return [self.x, self.y]
 
     def collision(self, x, y):
-        print('Help!')
         x1 = (self.x + x - 5) // window.block_size
         x2 = (self.x + x + window.hero_width) // window.block_size
         y1 = (self.y + y + window.hero_height) // window.block_size
@@ -125,7 +160,7 @@ class Trader(Window):
         return False
 
 
-class Hero(Window):
+class Hero(Entity):
     def __init__(self):
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
@@ -134,29 +169,26 @@ class Hero(Window):
                     self.y = i * window.block_size
                     window.map[i][j] = '.'
                     break
-
-
+        super().__init__([self.x, self.y + 0.7 * window.hero_height, window.hero_width, window.hero_height * 0.3], 'Hero')
 
     def move(self, x, y):
-        if 0 <= self.x + x <= window.width - window.block_size:
-            if self.collision(x, 0):
-                self.x += x
-        if 0 <= self.y + y <= window.height - window.block_size:
-            if self.collision(0, y):
-                self.y += y
+        dx = x
+        dy = y
+        a = collision(self, dx, dy)
+        if 0 <= self.x + dx <= window.width - window.block_size:
+            if a == 'False':
+                self.x += dx
+            else:
+                dx = 0
+        if 0 <= self.y + dy <= window.height - window.block_size:
+            if a == 'False':
+                self.y += dy
+            else:
+                dy = 0
+        super().move(dx, dy)
 
     def get_pos(self):
         return [self.x, self.y]
-
-    def collision(self, x, y):
-        x1 = (self.x + x - 5) // window.block_size
-        x2 = (self.x + x + window.hero_width) // window.block_size
-        y1 = (self.y + y + window.hero_height) // window.block_size
-        y2 = (self.y + y + window.hero_height - 20) // window.block_size
-        if (window.map[x1][y1] != '#' and window.map[x2][y1] != '#'
-                and window.map[x1][y2] != '#' and window.map[x2][y2]):
-            return True
-        return False
 
 
 class Bullet(Window):
@@ -178,35 +210,47 @@ class Bullet(Window):
         x2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
         y1 = int((self.y + self.speed * self.dy) // window.block_size)
         y2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
-        print(x1, x2, y1, y2)
         if (window.map[x1][y1] != '#' and window.map[x2][y1] != '#'
                 and window.map[x1][y2] != '#' and window.map[x2][y2]):
             return True
         return False
 
 
-class Enemy():
+class Enemy(Entity):
     def __init__(self, x, y):
         self.speed = 1
         self.x = x
         self.y = y
+        super().__init__([self.x, self.y + 0.7 * window.enemy_height, window.enemy_width, window.enemy_height * 0.3], 'Enemy')
 
     def move(self):
-        destination = hero.get_pos()
-        dx = destination[0] - self.x
-        dy = destination[1] - self.y
+        dest = hero.get_pos()
+        dx = dest[0] - self.x
+        dy = dest[1] - self.y
         if dy != 0 and dx != 0:
             k = math.atan(dx / dy)
-            if destination[1] - self.y < 0:
-                dx, dy = -math.sin(k), -math.cos(k)
+            if dest[1] - self.y < 0:
+                dx, dy = -math.sin(k) * self.speed, -math.cos(k) * self.speed
             else:
-                dx, dy = math.sin(k), math.cos(k)
+                dx, dy = math.sin(k) * self.speed, math.cos(k) * self.speed
         elif dx == 0:
-            dx, dy = 0, 1
+            dx, dy = 0, self.speed
         elif dy == 0:
-            dx, dy = 1, 0
-        self.x += dx
-        self.y += dy
+            dx, dy = self.speed, 0
+        a = collision(self, dx, dy)
+        if 0 <= self.x + dx <= window.width - window.block_size:
+            if a == 'False':
+                self.x += dx
+            else:
+                dx = 0
+        if 0 <= self.y + dy <= window.height - window.block_size:
+            if a == 'False':
+                self.y += dy
+            else:
+                dy = 0
+        print(a, dx, dy)
+        if a == 'False':
+            super().move(dx, dy)
 
 
 pygame.init()
@@ -216,9 +260,11 @@ size = width, height = 550, 550
 sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'box': load_image('box.png'),
            'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
-           'trader': load_image('traider.png')}
+            # 'trader': load_image('traider.png')
+           }
 bullets = []
 enemies = []
+entities = []
 screen = pygame.display.set_mode(size)
 window = Window(size)
 running = True
@@ -234,20 +280,22 @@ while running:
                 if os.path.exists(os.path.join('maps', a + '.txt')):
                     window.input_map(a + '.txt')
                     menu = False
-                    hero = Hero()
-                    trader = Trader()
+                    hero = Hero()  # инициализация героя
+                    trader = Trader()  # инициализация NPS
                     for i in range(window.map_size[1]):
                         for j in range(window.map_size[0]):
                             if window.map[i][j] == '-':
                                 x = j * window.block_size + window.block_size - window.enemy_width // 2
                                 y = i * window.block_size
                                 window.map[i][j] = '.'
-                                enemies.append(Enemy(x, y))
+                                enemies.append(Enemy(x, y))  # инициализация врагов
+                    entities = [hero, *enemies]
 
                 else:
                     print('несуществующая карта')
                     terminate()
         else:
+            # управление персонажем
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
                     move_left = True
@@ -268,6 +316,7 @@ while running:
                     move_down = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
+                    # создание снарядов
                     speed = 4
                     destination = list(event.pos)
                     cords = [hero.get_pos()[0] + window.hero_width // 2,
@@ -285,6 +334,7 @@ while running:
                     elif dy == 0:
                         dx, dy = 1, 0
                     bullets.append(Bullet([dx, dy], cords, speed))
+    # перемещение активных объектов
     if move_left:
         hero.move(-2, 0)
     elif move_right:
