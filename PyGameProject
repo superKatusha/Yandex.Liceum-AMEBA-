@@ -50,6 +50,8 @@ class Window:
         self.bul_size = 10
         self.enemy_height = 0
         self.enemy_width = 0
+        self.trader_height = 0
+        self.trader_width = 0
 
     def input_map(self, name):
         self.map = []
@@ -66,6 +68,8 @@ class Window:
         self.hero_width = int(round(0.7 * self.block_size))
         self.enemy_height = self.hero_height
         self.enemy_width = self.hero_width
+        self.trader_height = self.hero_height
+        self.trader_width = self.hero_width
 
     def render(self):
         if menu:
@@ -90,6 +94,9 @@ class Window:
             #             [hero.x, hero.y])
             screen.blit(pygame.transform.scale(sprites['hero'],
                                                (self.hero_width, self.hero_height)),
+                        hero.get_pos())
+            screen.blit(pygame.transform.scale(sprites['trader'],
+                                               (self.trader_width, self.trader_height)),
                         hero.get_pos())
             for bullet in bullets:
                 screen.blit(pygame.transform.scale(sprites['box'],
@@ -116,9 +123,9 @@ def collision(ent, x, y):
             x22 = x21 + width2
             y22 = y21 + height2
             if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
+                    (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
+                    (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
+                    (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
                 return entity
     return 'False'
 
@@ -141,10 +148,11 @@ class Trader(Entity):
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
                 if window.map[i][j] == 'T':
-                    self.x = j * window.block_size + window.block_size - window.hero_width // 2
-                    self.y = i * window.block_size
+                    self.xt = j * window.block_size + window.block_size - window.hero_width // 2
+                    self.yt = i * window.block_size
                     window.map[i][j] = '.'
                     break
+
 
     def get_pos(self):
         return [self.x, self.y]
@@ -169,7 +177,9 @@ class Hero(Entity):
                     self.y = i * window.block_size
                     window.map[i][j] = '.'
                     break
-        super().__init__([self.x, self.y + 0.7 * window.hero_height, window.hero_width, window.hero_height * 0.3], 'Hero')
+        super().__init__(
+            [self.x, self.y + 0.7 * window.hero_height, window.hero_width, window.hero_height * 0.3],
+            'Hero')
 
     def move(self, x, y):
         dx = x
@@ -221,7 +231,8 @@ class Enemy(Entity):
         self.speed = 1
         self.x = x
         self.y = y
-        super().__init__([self.x, self.y + 0.7 * window.enemy_height, window.enemy_width, window.enemy_height * 0.3], 'Enemy')
+        super().__init__([self.x, self.y + 0.7 * window.enemy_height, window.enemy_width,
+                          window.enemy_height * 0.3], 'Enemy')
 
     def move(self):
         dest = hero.get_pos()
@@ -259,8 +270,8 @@ FPS = 60
 size = width, height = 550, 550
 sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'box': load_image('box.png'),
-           'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
-            # 'trader': load_image('traider.png')
+           'black': load_image('black.jpg'), 'enemy': load_image('skin_evil.png'),
+           'trader': load_image('traider.png')
            }
 bullets = []
 enemies = []
@@ -355,3 +366,4 @@ while running:
     clock.tick(FPS)
     if menu:
         a = input()
+
