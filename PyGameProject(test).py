@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 import pygame
 import os
 import sys
 import math
+import random
 
 
 def load_image(name):
@@ -35,7 +37,7 @@ def start_screen():
         line_rect = string_rendered.get_rect()
         screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
         text_coord[1] += line_rect[3] + 30
-    screen.blit(font.render('¬¬≈ƒ»“≈ Õ¿«¬¿Õ»≈  ¿–“€', 1, (0, 0, 0)), [20, 300])
+    screen.blit(font.render('–í–í–ï–î–ò–¢–ï –ù–ê–ó–í–ê–ù–ò–ï –ö–ê–†–¢–´', 1, (0, 0, 0)), [20, 300])
 
 
 class Window:
@@ -77,6 +79,10 @@ class Window:
                         screen.blit(pygame.transform.scale(sprites['grass'],
                                                            (self.block_size, self.block_size)),
                                     [i * self.block_size, j * self.block_size])
+                    if self.map[i][j] == '~':
+                        screen.blit(pygame.transform.scale(sprites['water'],
+                                                           (self.block_size, self.block_size)),
+                                    [i * self.block_size, j * self.block_size])
                     elif self.map[i][j] == '#':
                         screen.blit(pygame.transform.scale(sprites['box'],
                                                            (self.block_size, self.block_size)),
@@ -85,9 +91,9 @@ class Window:
                         screen.blit(pygame.transform.scale(sprites['black'],
                                                            (self.block_size, self.block_size)),
                                     [i * self.block_size, j * self.block_size])
-            screen.blit(pygame.transform.scale(sprites['trader'],
-                                               (self.hero_width, self.hero_height)),
-                        [hero.x, hero.y])
+            #screen.blit(pygame.transform.scale(sprites['trader'],
+            #                                 (self.hero_width, self.hero_height)),
+            #            [hero.x, hero.y])
             screen.blit(pygame.transform.scale(sprites['hero'],
                                                (self.hero_width, self.hero_height)),
                         [hero.x, hero.y])
@@ -155,7 +161,9 @@ class Hero(Window):
         y2 = (self.y + y + window.hero_height - 20) // window.block_size
         if (window.map[x1][y1] != '#' and window.map[x2][y1] != '#'
                 and window.map[x1][y2] != '#' and window.map[x2][y2]):
-            return True
+            if (window.map[x1][y1] != '~' and window.map[x2][y1] != '~'
+                    and window.map[x1][y2] != '~' and window.map[x2][y2]):
+                return True
         return False
 
 
@@ -189,8 +197,8 @@ class Bullet(Window):
 
 
 class Enemy():
-    def __init__(self, x, y):
-        self.hp = 1
+    def __init__(self, x, y, hp):
+        self.hp = hp
         self.speed = 1
         self.x = x
         self.y = y
@@ -203,7 +211,7 @@ class Enemy():
             if round(bulleter[0]) in range(round(self.x), round(self.x) + 40) and round(bulleter[1]) in range(round(self.y), round(self.y) + 40):
                 damaged_sound1.play()
                 deleted_bullets.append(i)
-                self.hp -= 1
+                self.hp -= 20
         deleted_bullets = sorted(deleted_bullets)
         for _ in deleted_bullets:
             del bullets[_]
@@ -237,7 +245,7 @@ size = width, height = 550, 550
 sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'box': load_image('box.png'),
            'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
-           'trader': load_image('traider.png')}
+           'water': load_image('water.png')}
 shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
 damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
 move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
@@ -266,10 +274,10 @@ while running:
                                 x = j * window.block_size + window.block_size - window.enemy_width // 2
                                 y = i * window.block_size
                                 window.map[i][j] = '.'
-                                enemies.append(Enemy(x, y))
+                                enemies.append(Enemy(x, y, 100))
 
                 else:
-                    print('ÌÂÒÛ˘ÂÒÚ‚Û˛˘‡ˇ Í‡Ú‡')
+                    print('–Ω–µ—Å—É—â–µ—Å—Ç–≤—É—é—â–∞—è –∫–∞—Ä—Ç–∞')
                     terminate()
         else:
             if event.type == pygame.KEYDOWN:
