@@ -279,6 +279,9 @@ sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'box': load_image('box.png'),
            'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
            'water': load_image('water.png')}
+channel1 = pygame.mixer.Channel(0)
+channel2 = pygame.mixer.Channel(1)
+channel3 = pygame.mixer.Channel(2)
 shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
 damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
 move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
@@ -352,16 +355,16 @@ while running:
                         dx, dy = 1, 0
                     bullets.append(Bullet([dx, dy], cords, speed))
     if move_left:
-        move_sound1.play()
+        channel1.play(move_sound1)
         hero.move(-2, 0)
     elif move_right:
-        move_sound1.play()
+        channel1.play(move_sound1)
         hero.move(2, 0)
     if move_up:
-        move_sound1.play()
+        channel1.play(move_sound1)
         hero.move(0, -2)
     elif move_down:
-        move_sound1.play()
+        channel1.play(move_sound1)
         hero.move(0, 2)
     for bullet in bullets:
         bullet.move()
