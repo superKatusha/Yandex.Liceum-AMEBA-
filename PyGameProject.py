@@ -62,6 +62,8 @@ class Window:
             else:
                 self.map.append(list(a[i].rstrip().ljust(self.map_size[0], '.')))
         self.block_size = self.width // self.map_size[0]
+        for i in range(len(self.map)):
+            print(self.map[i])
 
     def render(self):
         if menu:
@@ -69,11 +71,14 @@ class Window:
         else:
             for i in range(self.map_size[1]):
                 for j in range(self.map_size[0]):
+                    if self.map[i][j] == 'd' and len(enemies) == 0:
+                        self.map[i][j] = '.'
+                        print('POOF')
                     if self.map[i][j] == '.':
                         screen.blit(pygame.transform.scale(sprites['grass'],
                                                            (self.block_size, self.block_size)),
                                     [i * self.block_size, j * self.block_size])
-                    if self.map[i][j] == '~':
+                    elif self.map[i][j] == '~':
                         screen.blit(pygame.transform.scale(sprites['water'],
                                                            (self.block_size, self.block_size)),
                                     [i * self.block_size, j * self.block_size])
@@ -86,7 +91,9 @@ class Window:
                                                            (self.block_size, self.block_size)),
                                     [i * self.block_size, j * self.block_size])
             for entity in entities:
-                print((entity.width, entity.height, entity.name))
+                if entity.name == 'hero':
+                    if entity.x != entity.x_pos:
+                        print('ERROR', entity.xssss, entity.x_pos)
                 screen.blit(pygame.transform.scale(sprites[entity.name],
                                                    (entity.width, entity.height)),
                             entity.get_pos())
@@ -102,8 +109,23 @@ def collision(ent, x, y):
     x2 = x1 + width
     y1 += y
     y2 = y1 + height
-    if (window.map[int(x1 // window.block_size)][int(y1 // window.block_size)] == '#' or
-            window.map[int(x2 // window.block_size)][int(y2 // window.block_size)] == '#'):
+    map_x1 = int(x1 // window.block_size)
+    map_x2 = int(x2 // window.block_size)
+    map_y1 = int(y1 // window.block_size)
+    map_y2 = int(y2 // window.block_size)
+    if map_x1 == len(window.map[0]):
+        map_x1 -= 1
+    if map_x2 == len(window.map[0]):
+        map_x2 -= 1
+    if map_y1 == len(window.map):
+        map_y1 -= 1
+    if map_y2 == len(window.map):
+        map_y2 -= 1
+    print(map_x1, map_y1, map_x2, map_y2)
+    if (window.map[map_x1][map_y1] == '#' or
+        window.map[map_x1][map_y2] == '#' or
+        window.map[map_x2][map_y1] == '#' or
+        window.map[map_x2][map_y2] == '#'):
         return 'Wall'
     for entity in entities:
         if entity != ent:
@@ -170,12 +192,12 @@ class Hero(Entity):
     def move(self, x, y):
         dx = x
         dy = y
-        if 0 <= self.x + dx <= window.width - window.block_size:
+        if 0 <= self.x + dx < window.width - window.block_size:
             if collision(self, dx, dy) == 'False':
                 self.x += dx
             else:
                 dx = 0
-        if 0 <= self.y + dy <= window.height - window.block_size:
+        if 0 <= self.y + dy < window.height - window.block_size:
             if collision(self, dx, dy) == 'False':
                 self.y += dy
             else:
