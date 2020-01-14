@@ -27,7 +27,7 @@ def press_detect(pos, button):
 
 
 def start_screen():
-    intro_text = ["Mini Mario"]
+    intro_text = ["ROGALIC"]
     fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 50)
@@ -49,11 +49,7 @@ class Window:
         self.map = []
         self.map_size = []
         self.block_size = 0
-        self.hero_height = 0
-        self.hero_width = 0
         self.bul_size = 10
-        self.enemy_height = 0
-        self.enemy_width = 0
 
     def input_map(self, name):
         self.map = []
@@ -66,10 +62,6 @@ class Window:
             else:
                 self.map.append(list(a[i].rstrip().ljust(self.map_size[0], '.')))
         self.block_size = self.width // self.map_size[0]
-        self.hero_height = int(round(1 * self.block_size))
-        self.hero_width = int(round(0.7 * self.block_size))
-        self.enemy_height = self.hero_height
-        self.enemy_width = self.hero_width
 
     def render(self):
         if menu:
@@ -93,20 +85,15 @@ class Window:
                         screen.blit(pygame.transform.scale(sprites['black'],
                                                            (self.block_size, self.block_size)),
                                     [i * self.block_size, j * self.block_size])
-            screen.blit(pygame.transform.scale(sprites['trader'],
-                                            (self.hero_width, self.hero_height)),
-                        [trader.x, trader.y])
-            screen.blit(pygame.transform.scale(sprites['hero'],
-                                               (self.hero_width, self.hero_height)),
-                        hero.get_pos())
+            for entity in entities:
+                print((entity.width, entity.height, entity.name))
+                screen.blit(pygame.transform.scale(sprites[entity.name],
+                                                   (entity.width, entity.height)),
+                            entity.get_pos())
             for bullet in bullets:
-                screen.blit(pygame.transform.scale(sprites['box'],
-                                                   (self.bul_size, self.bul_size)),
-                            [bullet.x, bullet.y])
-            for enemy in enemies:
-                screen.blit(pygame.transform.scale(sprites['enemy'],
-                                                   (self.enemy_width, self.enemy_height)),
-                            [enemy.x, enemy.y])
+                            screen.blit(pygame.transform.scale(sprites['box'],
+                                                               (self.bul_size, self.bul_size)),
+                                        [bullet.x, bullet.y])
 
 
 def collision(ent, x, y):
@@ -133,11 +120,11 @@ def collision(ent, x, y):
 
 class Entity:
     def __init__(self, rect, name):
-        [self.x_pos, self.y_pos, self.width, self.height] = rect
+        [self.x_pos, self.y_pos, self.width_pos, self.height_pos] = rect
         self.name = name
 
     def get_rect(self):
-        return [self.x_pos, self.y_pos, self.width, self.height]
+        return [self.x_pos, self.y_pos, self.width_pos, self.height_pos]
 
     def move(self, x, y):
         self.x_pos += x
@@ -149,13 +136,17 @@ class Entity:
 
 class Trader(Entity):
     def __init__(self):
+        self.width = int(round(1 * window.block_size))
+        self.height = int(round(0.7 * window.block_size))
+        print(self.width, self.height, 'Trader')
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
                 if window.map[i][j] == 'T':
-                    self.x = j * window.block_size + window.block_size - window.hero_width // 2
+                    self.x = j * window.block_size + window.block_size - self.width // 2
                     self.y = i * window.block_size
                     window.map[i][j] = '.'
                     break
+        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], 'trader')
 
     def get_pos(self):
         return [self.x, self.y]
@@ -163,15 +154,18 @@ class Trader(Entity):
 
 class Hero(Entity):
     def __init__(self):
-        self.hp = 10
+        self.hp = 100
+        self.width = int(round(0.7 * window.block_size))
+        self.height = int(round(1 * window.block_size))
+        print(self.width, self.height, 'Hero')
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
                 if window.map[i][j] == '@':
-                    self.x = j * window.block_size + window.block_size - window.hero_width // 2
+                    self.x = j * window.block_size + window.block_size - self.width // 2
                     self.y = i * window.block_size
                     window.map[i][j] = '.'
                     break
-        super().__init__([self.x, self.y + 0.7 * window.hero_height, window.hero_width, 0.3 * window.hero_height], 'Hero')
+        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], 'hero')
 
     def move(self, x, y):
         dx = x
@@ -225,10 +219,13 @@ class Enemy(Entity):
     def __init__(self, x, y, hp):
         self.hp = hp
         self.speed = 1
+        self.width = int(round(0.7 * window.block_size))
+        self.height = int(round(1 * window.block_size))
+        print(self.width, self.height, 'Enemy')
         self.x = x
         self.y = y
-        super().__init__([self.x, self.y + 0.7 * window.enemy_height, window.enemy_width, 0.3 * window.enemy_height],
-                         'Enemy')
+        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height],
+                         'enemy')
 
     def move(self):
         deleted_bullets = []
@@ -269,6 +266,9 @@ class Enemy(Entity):
             enemies.remove(self)
             entities.remove(self)
 
+    def get_pos(self):
+        return [self.x, self.y]
+
 
 pygame.init()
 a = ''
@@ -308,7 +308,7 @@ while running:
                         for i in range(window.map_size[1]):
                             for j in range(window.map_size[0]):
                                 if window.map[i][j] == '-':
-                                    x = j * window.block_size + window.block_size - window.enemy_width // 2
+                                    x = j * window.block_size + window.block_size - hero.width // 2
                                     y = i * window.block_size
                                     window.map[i][j] = '.'
                                     enemies.append(Enemy(x, y, 100))
@@ -346,8 +346,8 @@ while running:
                     shoot_sound1.play()
                     speed = 4
                     destination = list(event.pos)
-                    cords = [hero.get_pos()[0] + window.hero_width // 2,
-                             hero.get_pos()[1] + window.hero_height // 2]
+                    cords = [hero.get_pos()[0] + hero.width // 2,
+                             hero.get_pos()[1] + hero.height // 2]
                     dx = destination[0] - cords[0]
                     dy = destination[1] - cords[1]
                     if dy != 0 and dx != 0:
@@ -380,6 +380,10 @@ while running:
     for enemy in enemies:
         enemy.move()
     screen.fill((0, 0, 0))
+    for i in range(len(entities)):
+        for j in range(len(entities) - 1):
+            if entities[j].get_pos()[1] > entities[j + 1].get_pos()[1]:
+                entities[j], entities[j + 1] = entities[j + 1], entities[j]
     window.render()
     pygame.display.flip()
     clock.tick(FPS)
