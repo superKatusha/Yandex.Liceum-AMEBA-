@@ -66,32 +66,9 @@ class Window:
             print(self.map[i])
 
     def render(self):
-        global hp, bullets_count
         if menu:
             start_screen()
         else:
-            intro_text = [str(hp)]
-            font = pygame.font.Font(None, 35)
-            text_coord = [405, 548]
-            for line in intro_text:
-                string_rendered = font.render(line, 1, (255, 0, 0))
-                line_rect = string_rendered.get_rect()
-                screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
-                text_coord[1] += line_rect[3] + 30
-            screen.blit(pygame.transform.scale(sprites['hp'],
-                                               (30, 30)),
-                        [350, 545])
-            intro_text = [str(bullets_count)]
-            font = pygame.font.Font(None, 35)
-            text_coord = [405, 578]
-            for line in intro_text:
-                string_rendered = font.render(line, 1, (255, 0, 0))
-                line_rect = string_rendered.get_rect()
-                screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
-                text_coord[1] += line_rect[3] + 30
-            screen.blit(pygame.transform.scale(sprites['bull'],
-                                               (50, 30)),
-                        [340, 575])
             for i in range(self.map_size[1]):
                 for j in range(self.map_size[0]):
                     if self.map[i][j] == 'd' and len(enemies) == 0:
@@ -199,7 +176,7 @@ class Trader(Entity):
 
 class Hero(Entity):
     def __init__(self):
-        global hp
+        self.hp = 100
         self.width = int(round(0.7 * window.block_size))
         self.height = int(round(1 * window.block_size))
         print(self.width, self.height, 'Hero')
@@ -318,14 +295,11 @@ class Enemy(Entity):
 pygame.init()
 a = ''
 FPS = 60
-global hp, bullets_count
-hp = 100
-size = width, height = 550, 650
+size = width, height = 550, 550
 sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'box': load_image('box.png'), 'trader': load_image('trader.png'),
            'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
-           'water': load_image('water.png'), 'hp': load_image('hp.png'),
-           'bull': load_image('bullet.png')}
+           'water': load_image('water.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
@@ -333,7 +307,6 @@ shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
 damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
 move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
 bullets = []
-bullets_count = 45
 enemies = []
 entities = []
 screen = pygame.display.set_mode(size)
@@ -390,9 +363,6 @@ while running:
                     move_up = False
                 elif event.key == pygame.K_s:
                     move_down = False
-                elif event.key == pygame.K_u:
-                    hp -= 1
-                    move_down = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     shoot_sound1.play()
@@ -412,9 +382,7 @@ while running:
                         dx, dy = 0, 1
                     elif dy == 0:
                         dx, dy = 1, 0
-                    if bullets_count > 0:
-                        bullets_count -= 1
-                        bullets.append(Bullet([dx, dy], cords, speed))
+                    bullets.append(Bullet([dx, dy], cords, speed))
     if move_left:
         channel1.play(move_sound1)
         hero.move(-2, 0)
@@ -431,9 +399,6 @@ while running:
         bullet.move()
         if not bullet.a:
             bullets.remove(bullet)
-    if hp < 1:
-        print('Вы проиграли!')
-        terminate()
     for enemy in enemies:
         enemy.move()
     screen.fill((0, 0, 0))
