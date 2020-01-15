@@ -172,8 +172,8 @@ class Entity:
 
 class Trader(Entity):
     def __init__(self):
-        self.width = int(round(1 * window.block_size))
-        self.height = int(round(0.7 * window.block_size))
+        self.width = int(round(0.7 * window.block_size))
+        self.height = int(round(1 * window.block_size))
         print(self.width, self.height, 'Trader')
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
