@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="91755468-7123-41e4-8772-cab8a024cb56" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/PyGameProject.py" beforeDir="false" afterPath="$PROJECT_DIR$/PyGameProject.py" afterDir="false" />
-    </list>
+    <list default="true" id="91755468-7123-41e4-8772-cab8a024cb56" name="Default Changelist" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,8 +13,20 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/PyGameProject.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="468">
-              <caret line="189" lean-forward="true" selection-start-line="189" selection-end-line="189" />
+            <state relative-caret-position="165">
+              <caret line="272" column="37" lean-forward="true" selection-start-line="272" selection-start-column="37" selection-end-line="272" selection-end-column="37" />
+              <folding>
+                <element signature="e#113#207#0" />
+                <element signature="e#231#259#0" />
+                <element signature="e#297#465#0" />
+                <element signature="e#492#1157#0" />
+                <element signature="e#1178#5036#0" />
+                <element signature="e#5069#6492#0" />
+                <element signature="e#6513#6860#0" />
+                <element signature="e#6889#7575#0" />
+                <element signature="e#7602#8858#0" />
+                <element signature="e#8887#9836#0" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -135,7 +145,7 @@
       <window_info anchor="bottom" id="Event Log" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.13222222" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.13222222" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -187,8 +197,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/PyGameProject.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="468">
-          <caret line="189" lean-forward="true" selection-start-line="189" selection-end-line="189" />
+        <state relative-caret-position="165">
+          <caret line="272" column="37" lean-forward="true" selection-start-line="272" selection-start-column="37" selection-end-line="272" selection-end-column="37" />
+          <folding>
+            <element signature="e#113#207#0" />
+            <element signature="e#231#259#0" />
+            <element signature="e#297#465#0" />
+            <element signature="e#492#1157#0" />
+            <element signature="e#1178#5036#0" />
+            <element signature="e#5069#6492#0" />
+            <element signature="e#6513#6860#0" />
+            <element signature="e#6889#7575#0" />
+            <element signature="e#7602#8858#0" />
+            <element signature="e#8887#9836#0" />
+          </folding>
         </state>
       </provider>
     </entry>
