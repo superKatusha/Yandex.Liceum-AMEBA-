@@ -250,10 +250,10 @@ class Bullet(Window):
         return [self.x, self.y]
 
     def collision(self):
-        x1 = int((self.x + self.speed * self.dx) // window.block_size)
-        x2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
-        y1 = int((self.y + self.speed * self.dy) // window.block_size)
-        y2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
+        y1 = int((self.x + self.speed * self.dx) // window.block_size)
+        y2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
+        x1 = int((self.y + self.speed * self.dy) // window.block_size)
+        x2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
         #print(x1, x2, y1, y2)
         if (window.map[x1][y1] != '#' and window.map[x2][y1] != '#'
                 and window.map[x1][y2] != '#' and window.map[x2][y2]):
@@ -362,7 +362,7 @@ while running:
                                     y = i * window.block_size
                                     window.map[i][j] = '.'
                                     enemies.append(Enemy(x, y, 100))
-                        entities = [hero, *enemies]
+                        entities = [hero, *enemies, trader]
 
                     else:
                         print('несуществующая карта')
