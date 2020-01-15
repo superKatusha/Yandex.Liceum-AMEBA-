@@ -130,14 +130,6 @@ def collision(ent, x, y):
     map_y2 = int(x2 // window.block_size)
     map_x1 = int(y1 // window.block_size)
     map_x2 = int(y2 // window.block_size)
-    # if map_x1 == len(window.map[0]):
-    #     map_x1 -= 1
-    # if map_x2 == len(window.map[0]):
-    #     map_x2 -= 1
-    # if map_y1 == len(window.map):
-    #     map_y1 -= 1
-    # if map_y2 == len(window.map):
-    #     map_y2 -= 1
     print(map_x2, map_y2, window.map[6][11])
     if (window.map[map_x1][map_y1] == '#' or
         window.map[map_x1][map_y2] == '#' or
