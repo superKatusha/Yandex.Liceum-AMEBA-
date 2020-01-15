@@ -334,7 +334,7 @@ while running:
                                     y = i * window.block_size
                                     window.map[i][j] = '.'
                                     enemies.append(Enemy(x, y, 100))
-                        entities = [hero, *enemies]
+                        entities = [hero, *enemies, trader]
 
                     else:
                         print('несуществующая карта')
