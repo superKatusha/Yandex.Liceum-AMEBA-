@@ -2,6 +2,7 @@ import pygame
 import os
 import sys
 import math
+import random
 
 
 def load_image(name):
@@ -25,7 +26,7 @@ def press_detect(pos, button):
 
 
 def start_screen():
-    intro_text = ["Mini Mario"]
+    intro_text = ["ROGALIC"]
     fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 50)
@@ -36,6 +37,8 @@ def start_screen():
         screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
         text_coord[1] += line_rect[3] + 30
     screen.blit(font.render('ВВЕДИТЕ НАЗВАНИЕ КАРТЫ', 1, (0, 0, 0)), [20, 300])
+    pygame.draw.rect(screen, (255, 255, 255), [125, 350, 300, 40])
+    screen.blit(font.render(a, 1, (0, 0, 0)), [130, 350])
 
 
 class Window:
@@ -45,13 +48,7 @@ class Window:
         self.map = []
         self.map_size = []
         self.block_size = 0
-        self.hero_height = 0
-        self.hero_width = 0
         self.bul_size = 10
-        self.enemy_height = 0
-        self.enemy_width = 0
-        self.trader_height = 0
-        self.trader_width = 0
 
     def input_map(self, name):
         self.map = []
@@ -64,48 +61,66 @@ class Window:
             else:
                 self.map.append(list(a[i].rstrip().ljust(self.map_size[0], '.')))
         self.block_size = self.width // self.map_size[0]
-        self.hero_height = int(round(1 * self.block_size))
-        self.hero_width = int(round(0.7 * self.block_size))
-        self.enemy_height = self.hero_height
-        self.enemy_width = self.hero_width
-        self.trader_height = self.hero_height
-        self.trader_width = self.hero_width
+        for i in range(len(self.map)):
+            print(self.map[i])
 
     def render(self):
+        global hp, bullets_count
         if menu:
             start_screen()
         else:
+            intro_text = [str(hp)]
+            font = pygame.font.Font(None, 35)
+            text_coord = [405, 548]
+            for line in intro_text:
+                string_rendered = font.render(line, 1, (255, 0, 0))
+                line_rect = string_rendered.get_rect()
+                screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
+                text_coord[1] += line_rect[3] + 30
+            screen.blit(pygame.transform.scale(sprites['hp'],
+                                               (30, 30)),
+                        [350, 545])
+            intro_text = [str(bullets_count)]
+            font = pygame.font.Font(None, 35)
+            text_coord = [405, 578]
+            for line in intro_text:
+                string_rendered = font.render(line, 1, (255, 0, 0))
+                line_rect = string_rendered.get_rect()
+                screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
+                text_coord[1] += line_rect[3] + 30
+            screen.blit(pygame.transform.scale(sprites['bull'],
+                                               (50, 30)),
+                        [340, 575])
             for i in range(self.map_size[1]):
                 for j in range(self.map_size[0]):
-                    if self.map[i][j] == '.':
+                    if self.map[i][j] == '.' or (self.map[i][j] == 'd' and len(enemies) == 0):
                         screen.blit(pygame.transform.scale(sprites['grass'],
                                                            (self.block_size, self.block_size)),
-                                    [i * self.block_size, j * self.block_size])
+                                    [j * self.block_size, i * self.block_size])
+                    elif self.map[i][j] == '~':
+                        screen.blit(pygame.transform.scale(sprites['water'],
+                                                           (self.block_size, self.block_size)),
+                                    [j * self.block_size, i * self.block_size])
                     elif self.map[i][j] == '#':
                         screen.blit(pygame.transform.scale(sprites['box'],
                                                            (self.block_size, self.block_size)),
-                                    [i * self.block_size, j * self.block_size])
+                                    [j * self.block_size, i * self.block_size])
                     elif self.map[i][j] == '0':
                         screen.blit(pygame.transform.scale(sprites['black'],
                                                            (self.block_size, self.block_size)),
-                                    [i * self.block_size, j * self.block_size])
-            # screen.blit(pygame.transform.scale(sprites['trader'],
-            #                                    (self.hero_width, self.hero_height)),
-            #             [hero.x, hero.y])
-            screen.blit(pygame.transform.scale(sprites['hero'],
-                                               (self.hero_width, self.hero_height)),
-                        hero.get_pos())
-            screen.blit(pygame.transform.scale(sprites['trader'],
-                                               (self.trader_width, self.trader_height)),
-                        hero.get_pos())
+                                    [j * self.block_size, i * self.block_size])
+                    elif self.map[i][j] == 'M':
+                        screen.blit(pygame.transform.scale(sprites['menu'],
+                                                           (self.block_size, self.block_size)),
+                                    [j * self.block_size, i * self.block_size])
+            for entity in entities:
+                screen.blit(pygame.transform.scale(sprites[entity.name],
+                                                   (entity.width, entity.height)),
+                            entity.get_pos())
             for bullet in bullets:
                 screen.blit(pygame.transform.scale(sprites['box'],
                                                    (self.bul_size, self.bul_size)),
                             [bullet.x, bullet.y])
-            for enemy in enemies:
-                screen.blit(pygame.transform.scale(sprites['enemy'],
-                                                   (self.enemy_width, self.enemy_height)),
-                            [enemy.x, enemy.y])
 
 
 def collision(ent, x, y):
@@ -114,9 +129,16 @@ def collision(ent, x, y):
     x2 = x1 + width
     y1 += y
     y2 = y1 + height
-    if (window.map[int(x1 // window.block_size)][int(y1 // window.block_size)] == '#' or
-            window.map[int(x2 // window.block_size)][int(y2 // window.block_size)] == '#'):
-        return 'wall'
+    map_y1 = int(x1 // window.block_size)
+    map_y2 = int(x2 // window.block_size)
+    map_x1 = int(y1 // window.block_size)
+    map_x2 = int(y2 // window.block_size)
+    print(map_x2, map_y2, window.map[6][11])
+    if (window.map[map_x1][map_y1] == '#' or
+            window.map[map_x1][map_y2] == '#' or
+            window.map[map_x2][map_y1] == '#' or
+            window.map[map_x2][map_y2] == '#'):
+        return 'Wall'
     for entity in entities:
         if entity != ent:
             [x21, y21, width2, height2] = entity.get_rect()
@@ -127,71 +149,75 @@ def collision(ent, x, y):
                     (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
                     (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
                 return entity
+    if (window.map[map_x1][map_y1] == 'd' or
+            window.map[map_x1][map_y2] == 'd' or
+            window.map[map_x2][map_y1] == 'd' or
+            window.map[map_x2][map_y2] == 'd'):
+        return 'Door'
     return 'False'
 
 
 class Entity:
     def __init__(self, rect, name):
-        [self.x_pos, self.y_pos, self.width, self.height] = rect
+        [self.x_pos, self.y_pos, self.width_pos, self.height_pos] = rect
         self.name = name
 
     def get_rect(self):
-        return [self.x_pos, self.y_pos, self.width, self.height]
+        return [self.x_pos, self.y_pos, self.width_pos, self.height_pos]
 
     def move(self, x, y):
         self.x_pos += x
         self.y_pos += y
 
+    def delete(self):
+        self.delete()
+
 
 class Trader(Entity):
     def __init__(self):
+        self.width = int(round(0.7 * window.block_size))
+        self.height = int(round(1 * window.block_size))
+        print(self.width, self.height, 'Trader')
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
                 if window.map[i][j] == 'T':
-                    self.xt = j * window.block_size + window.block_size - window.hero_width // 2
-                    self.yt = i * window.block_size
+                    self.x = j * window.block_size + window.block_size - self.width // 2
+                    self.y = i * window.block_size
                     window.map[i][j] = '.'
                     break
-
+        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], 'trader')
 
     def get_pos(self):
         return [self.x, self.y]
 
-    def collision(self, x, y):
-        x1 = (self.x + x - 5) // window.block_size
-        x2 = (self.x + x + window.hero_width) // window.block_size
-        y1 = (self.y + y + window.hero_height) // window.block_size
-        y2 = (self.y + y + window.hero_height - 20) // window.block_size
-        if (window.map[x1][y1] != '#' and window.map[x2][y1] != '#'
-                and window.map[x1][y2] != '#' and window.map[x2][y2]):
-            return True
-        return False
-
 
 class Hero(Entity):
     def __init__(self):
+        global hp
+        self.width = int(round(0.7 * window.block_size))
+        self.height = int(round(1 * window.block_size))
+        print(self.width, self.height, 'Hero')
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
                 if window.map[i][j] == '@':
-                    self.x = j * window.block_size + window.block_size - window.hero_width // 2
+                    self.x = j * window.block_size + window.block_size - self.width // 2
                     self.y = i * window.block_size
                     window.map[i][j] = '.'
                     break
-        super().__init__(
-            [self.x, self.y + 0.7 * window.hero_height, window.hero_width, window.hero_height * 0.3],
-            'Hero')
+        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], 'hero')
 
     def move(self, x, y):
         dx = x
         dy = y
-        a = collision(self, dx, dy)
-        if 0 <= self.x + dx <= window.width - window.block_size:
-            if a == 'False':
+        col = collision(self, dx, dy)
+        print(col)
+        if 0 <= self.x + dx < window.width - window.block_size:
+            if col == 'False' or (col == 'Door' and len(enemies) == 0):
                 self.x += dx
             else:
                 dx = 0
-        if 0 <= self.y + dy <= window.height - window.block_size:
-            if a == 'False':
+        if 0 <= self.y + dy < window.height - window.block_size:
+            if col == 'False' or (col == 'Door' and len(enemies) == 0):
                 self.y += dy
             else:
                 dy = 0
@@ -215,11 +241,15 @@ class Bullet(Window):
         else:
             self.a = False
 
+    def get_pos(self):
+        return [self.x, self.y]
+
     def collision(self):
-        x1 = int((self.x + self.speed * self.dx) // window.block_size)
-        x2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
-        y1 = int((self.y + self.speed * self.dy) // window.block_size)
-        y2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
+        y1 = int((self.x + self.speed * self.dx) // window.block_size)
+        y2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
+        x1 = int((self.y + self.speed * self.dy) // window.block_size)
+        x2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
+        # print(x1, x2, y1, y2)
         if (window.map[x1][y1] != '#' and window.map[x2][y1] != '#'
                 and window.map[x1][y2] != '#' and window.map[x2][y2]):
             return True
@@ -227,53 +257,80 @@ class Bullet(Window):
 
 
 class Enemy(Entity):
-    def __init__(self, x, y):
+    def __init__(self, x, y, hp):
+        self.hp = hp
         self.speed = 1
+        self.width = int(round(0.7 * window.block_size))
+        self.height = int(round(1 * window.block_size))
+        print(self.width, self.height, 'Enemy')
         self.x = x
         self.y = y
-        super().__init__([self.x, self.y + 0.7 * window.enemy_height, window.enemy_width,
-                          window.enemy_height * 0.3], 'Enemy')
+        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height],
+                         'enemy')
 
     def move(self):
-        dest = hero.get_pos()
-        dx = dest[0] - self.x
-        dy = dest[1] - self.y
+        deleted_bullets = []
+        for i in range(len(bullets)):
+            bulleter = bullets[i].get_pos()
+            if round(bulleter[0]) in range(round(self.x), round(self.x) + 40) and round(bulleter[1]) in range(
+                    round(self.y), round(self.y) + 40):
+                damaged_sound1.play()
+                deleted_bullets.append(i)
+                self.hp -= 20
+        deleted_bullets = sorted(deleted_bullets)
+        for _ in deleted_bullets:
+            del bullets[_]
+        destination = hero.get_pos()
+        dx = destination[0] - self.x
+        dy = destination[1] - self.y
         if dy != 0 and dx != 0:
             k = math.atan(dx / dy)
-            if dest[1] - self.y < 0:
-                dx, dy = -math.sin(k) * self.speed, -math.cos(k) * self.speed
+            if destination[1] - self.y < 0:
+                dx, dy = -math.sin(k), -math.cos(k)
             else:
-                dx, dy = math.sin(k) * self.speed, math.cos(k) * self.speed
-        elif dx == 0:
-            dx, dy = 0, self.speed
-        elif dy == 0:
-            dx, dy = self.speed, 0
-        a = collision(self, dx, dy)
+                dx, dy = math.sin(k), math.cos(k)
+        elif dx == 0 and dy > 0:
+            dx, dy = 0, 1
+        elif dy == 0 and dx > 0:
+            dx, dy = 1, 0
         if 0 <= self.x + dx <= window.width - window.block_size:
-            if a == 'False':
+            if collision(self, dx, dy) == 'False':
                 self.x += dx
             else:
                 dx = 0
         if 0 <= self.y + dy <= window.height - window.block_size:
-            if a == 'False':
+            if collision(self, dx, dy) == 'False':
                 self.y += dy
             else:
                 dy = 0
-        print(a, dx, dy)
-        if a == 'False':
-            super().move(dx, dy)
+        super().move(dx, dy)
+        if self.hp < 1:
+            enemies.remove(self)
+            entities.remove(self)
+
+    def get_pos(self):
+        return [self.x, self.y]
 
 
 pygame.init()
 a = ''
 FPS = 60
-size = width, height = 550, 550
+global hp, bullets_count
+hp = 100
+size = width, height = 550, 650
 sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
-           'box': load_image('box.png'),
-           'black': load_image('black.jpg'), 'enemy': load_image('skin_evil.png'),
-           'trader': load_image('traider.png')
-           }
+           'box': load_image('box.png'), 'trader': load_image('trader.png'),
+           'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
+           'water': load_image('water.png'), 'hp': load_image('hp.png'),
+           'bull': load_image('bullet.png')}
+channel1 = pygame.mixer.Channel(0)
+channel2 = pygame.mixer.Channel(1)
+channel3 = pygame.mixer.Channel(2)
+shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
+damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
+move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
 bullets = []
+bullets_count = 45
 enemies = []
 entities = []
 screen = pygame.display.set_mode(size)
@@ -287,26 +344,31 @@ while running:
         if event.type == pygame.QUIT:
             terminate()
         if menu:
-            if len(a) != 0:
-                if os.path.exists(os.path.join('maps', a + '.txt')):
-                    window.input_map(a + '.txt')
-                    menu = False
-                    hero = Hero()  # инициализация героя
-                    trader = Trader()  # инициализация NPS
-                    for i in range(window.map_size[1]):
-                        for j in range(window.map_size[0]):
-                            if window.map[i][j] == '-':
-                                x = j * window.block_size + window.block_size - window.enemy_width // 2
-                                y = i * window.block_size
-                                window.map[i][j] = '.'
-                                enemies.append(Enemy(x, y))  # инициализация врагов
-                    entities = [hero, *enemies]
+            if event.type == pygame.KEYDOWN:
+                if event.key == 13:
+                    if os.path.exists(os.path.join('maps', a + '.txt')):
+                        window.input_map(a + '.txt')
+                        menu = False
+                        hero = Hero()
+                        trader = Trader()
+                        for i in range(window.map_size[1]):
+                            for j in range(window.map_size[0]):
+                                if window.map[i][j] == '-':
+                                    x = j * window.block_size + window.block_size - hero.width // 2
+                                    y = i * window.block_size
+                                    window.map[i][j] = '.'
+                                    enemies.append(Enemy(x, y, 100))
+                        entities = [hero, *enemies, trader]
 
+                    else:
+                        print('несуществующая карта')
+                        terminate()
+                elif event.key == pygame.K_BACKSPACE:
+                    if len(a) != 0:
+                        a = a[:-1]
                 else:
-                    print('несуществующая карта')
-                    terminate()
+                    a += chr(event.key)
         else:
-            # управление персонажем
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
                     move_left = True
@@ -325,13 +387,16 @@ while running:
                     move_up = False
                 elif event.key == pygame.K_s:
                     move_down = False
+                elif event.key == pygame.K_u:
+                    hp -= 1
+                    move_down = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    # создание снарядов
+                    shoot_sound1.play()
                     speed = 4
                     destination = list(event.pos)
-                    cords = [hero.get_pos()[0] + window.hero_width // 2,
-                             hero.get_pos()[1] + window.hero_height // 2]
+                    cords = [hero.get_pos()[0] + hero.width // 2,
+                             hero.get_pos()[1] + hero.height // 2]
                     dx = destination[0] - cords[0]
                     dy = destination[1] - cords[1]
                     if dy != 0 and dx != 0:
@@ -344,26 +409,37 @@ while running:
                         dx, dy = 0, 1
                     elif dy == 0:
                         dx, dy = 1, 0
-                    bullets.append(Bullet([dx, dy], cords, speed))
-    # перемещение активных объектов
+                    if bullets_count > 0:
+                        bullets_count -= 1
+                        bullets.append(Bullet([dx, dy], cords, speed))
+                if (event.button == 1) and (destination == trader):
+                    print('efgwejghfvweugfuewfbwsejkfgwebgjk')
     if move_left:
+        channel1.play(move_sound1)
         hero.move(-2, 0)
     elif move_right:
+        channel1.play(move_sound1)
         hero.move(2, 0)
     if move_up:
+        channel1.play(move_sound1)
         hero.move(0, -2)
     elif move_down:
+        channel1.play(move_sound1)
         hero.move(0, 2)
     for bullet in bullets:
         bullet.move()
         if not bullet.a:
             bullets.remove(bullet)
+    if hp < 1:
+        print('Вы проиграли!')
+        terminate()
     for enemy in enemies:
         enemy.move()
     screen.fill((0, 0, 0))
+    for i in range(len(entities)):
+        for j in range(len(entities) - 1):
+            if entities[j].get_pos()[1] > entities[j + 1].get_pos()[1]:
+                entities[j], entities[j + 1] = entities[j + 1], entities[j]
     window.render()
     pygame.display.flip()
     clock.tick(FPS)
-    if menu:
-        a = input()
-
