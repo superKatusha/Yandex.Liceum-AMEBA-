@@ -13,6 +13,9 @@
   </component>
   <component name="ProjectId" id="1WOhsfOJ3exRL9c1Og90qIF4UGJ" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="PropertiesComponent">
+    <property name="last_opened_file_path" value="D:/программы/PyCharm" />
+  </component>
   <component name="RunDashboard">
     <option name="ruleStates">
       <list>
@@ -71,7 +74,9 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>
