@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pygame
 import os
 import sys
@@ -130,14 +129,6 @@ def collision(ent, x, y):
     map_y2 = int(x2 // window.block_size)
     map_x1 = int(y1 // window.block_size)
     map_x2 = int(y2 // window.block_size)
-    # if map_x1 == len(window.map[0]):
-    #     map_x1 -= 1
-    # if map_x2 == len(window.map[0]):
-    #     map_x2 -= 1
-    # if map_y1 == len(window.map):
-    #     map_y1 -= 1
-    # if map_y2 == len(window.map):
-    #     map_y2 -= 1
     print(map_x2, map_y2, window.map[6][11])
     if (window.map[map_x1][map_y1] == '#' or
         window.map[map_x1][map_y2] == '#' or
@@ -180,8 +171,8 @@ class Entity:
 
 class Trader(Entity):
     def __init__(self):
-        self.width = int(round(1 * window.block_size))
-        self.height = int(round(0.7 * window.block_size))
+        self.width = int(round(0.7 * window.block_size))
+        self.height = int(round(1 * window.block_size))
         print(self.width, self.height, 'Trader')
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
@@ -250,10 +241,10 @@ class Bullet(Window):
         return [self.x, self.y]
 
     def collision(self):
-        x1 = int((self.x + self.speed * self.dx) // window.block_size)
-        x2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
-        y1 = int((self.y + self.speed * self.dy) // window.block_size)
-        y2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
+        y1 = int((self.x + self.speed * self.dx) // window.block_size)
+        y2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
+        x1 = int((self.y + self.speed * self.dy) // window.block_size)
+        x2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
         #print(x1, x2, y1, y2)
         if (window.map[x1][y1] != '#' and window.map[x2][y1] != '#'
                 and window.map[x1][y2] != '#' and window.map[x2][y2]):
