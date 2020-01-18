@@ -67,27 +67,6 @@ def indicators():
                 [340, 575])
 
 
-def ent_upd():
-    global entities, traders, enemies, hero
-    traders = []
-    enemies = []
-    for i in range(window.room_y, window.room_y + window.room_height):
-        for j in range(window.room_x, window.room_x + window.room_width):
-            if window.map[i][j] == 'T':
-                x = j * window.block_size + window.block_size - hero.width // 2
-                y = i * window.block_size
-                window.map[i][j] = '.'
-                traders.append(Trader())
-    for i in range(window.room_y, window.room_y + window.room_height):
-        for j in range(window.room_x, window.room_x + window.room_width):
-            if window.map[i][j] == 'e':
-                x = j * window.block_size + window.block_size - hero.width // 2
-                y = i * window.block_size
-                window.map[i][j] = '.'
-                enemies.append(Enemy(x, y, 100))
-    entities = [*enemies, *traders]
-
-
 class Window:
     def __init__(self, size):
         global entities
@@ -110,8 +89,6 @@ class Window:
                 self.map_size = list(map(int, a[i].split()))
             else:
                 self.map.append(list(a[i].rstrip().ljust(self.map_size[0], '.')))
-        for i in range(len(self.map)):
-            print(self.map[i])
 
     def render(self):
         global hp, bullets_count
@@ -151,9 +128,11 @@ class Window:
                     #                                        (self.block_size, self.block_size)),
                     #                 [j * self.block_size, i * self.block_size])
             for entity in entities:
-                screen.blit(pygame.transform.scale(sprites[entity.name],
-                                                   (entity.width, entity.height)),
-                            [self.dx + entity.x, self.dy + entity.y])
+                if (self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
+                        self.room_y + self.room_height > entity.y // window.block_size > self.room_y - 1):
+                    screen.blit(pygame.transform.scale(sprites[entity.name],
+                                                       (entity.width, entity.height)),
+                                [self.dx + entity.x, self.dy + entity.y])
             for bullet in bullets:
                 screen.blit(pygame.transform.scale(sprites['box'],
                                                    (self.bul_size, self.bul_size)),
@@ -164,11 +143,15 @@ class Window:
         [self.room_x, self.room_y, self.room_width, self.room_height] = rect
         self.block_size = min(self.width, self.height) // max(self.room_width, self.room_height)
         if self.room_width > self.room_height:
-            self.dy = (self.room_width - self.room_height) * self.block_size // 2
+            # self.dy = (self.room_width - self.room_height) * self.block_size // 2 - self.room_y * self.block_size
+            self.dy = - self.room_y * self.block_size
+            pass
         elif self.room_width < self.room_height:
-            self.dx = (self.room_height - self.room_width) * self.block_size // 2
-        if len(enemies) == 0:
-            ent_upd()
+            # self.dx = (self.room_height - self.room_width) * self.block_size // 2 - self.room_x * self.block_size
+            self.dx = - self.room_x * self.block_size
+            pass
+        for i in range(self.room_y, self.room_y + self.room_height + 1):
+            print(self.map[i][self.room_x: self.room_x + self.room_width])
         print(self.dx, self.dy)
 
 
@@ -307,7 +290,6 @@ class Hero(Entity):
         print(dx, dy)
 
     def room_init(self, i, j):
-        global entities
         for x in range(j, -1, -1):
             if window.map[i][x] in 'd0=':
                 self.room_x = x
@@ -325,7 +307,6 @@ class Hero(Entity):
                 self.room_y1 = y
                 break
         window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x + 1, self.room_y1 - self.room_y)
-        entities.insert(0, self)
 
     def room_upd(self, key):
         if key == 'D':
@@ -372,7 +353,6 @@ class Hero(Entity):
                 break
         print([self.room_x, self.room_y, self.room_x1 - self.room_x + 1, self.room_y1 - self.room_y])
         window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x + 1, self.room_y1 - self.room_y)
-        entities.insert(0, self)
 
     def get_pos(self):
         return [self.x, self.y]
@@ -381,7 +361,7 @@ class Hero(Entity):
 class Bullet(Window):
     def __init__(self, delt, cords, speed):
         [self.dx, self.dy] = delt
-        [self.x, self.y] = cords
+        self.x, self.y = cords[0] - window.dx, cords[1] - dy
         self.speed = speed
         self.a = True
 
@@ -501,6 +481,17 @@ while running:
                         window.input_map(a + '.txt')
                         menu = False
                         hero = Hero()  # определение героя + # определение комнаты
+                        for i in range(window.map_size[1]):
+                            for j in range(window.map_size[0]):
+                                x = j * window.block_size + window.block_size - hero.width // 2
+                                y = i * window.block_size
+                                if window.map[i][j] == 'T':
+                                    window.map[i][j] = '.'
+                                    traders.append(Trader(x, y))
+                                elif window.map[i][j] == 'e':
+                                    window.map[i][j] = '.'
+                                    enemies.append(Enemy(x, y, 100))
+                        entities = [hero, *enemies, *traders]
                     else:
                         print('несуществующая карта')
                         terminate()
@@ -574,7 +565,9 @@ while running:
         print('Вы проиграли!')
         terminate()
     for enemy in enemies:
-        enemy.move()
+        if (window.room_x + window.room_width > enemy.x // window.block_size > window.room_x - 1 and
+                window.room_y + window.room_height > enemy.y // window.block_size > window.room_y - 1):
+            enemy.move()
     screen.fill((0, 0, 0))
     for i in range(len(entities)):
         for j in range(len(entities) - 1):
@@ -583,181 +576,3 @@ while running:
     window.render()
     pygame.display.flip()
     clock.tick(FPS)
-
-
-class Bullet(Window):
-    def __init__(self, delt, cords, speed):
-        [self.dx, self.dy] = delt
-        [self.x, self.y] = cords
-        self.speed = speed
-        self.a = True
-
-    def move(self):
-        if self.collision():
-            self.x += self.speed * self.dx
-            self.y += self.speed * self.dy
-        else:
-            self.a = False
-
-    def get_pos(self):
-        return [self.x, self.y]
-
-    def collision(self):
-        x1 = int((self.x + self.speed * self.dx) // window.block_size)
-        x2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
-        y1 = int((self.y + self.speed * self.dy) // window.block_size)
-        y2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
-        #print(x1, x2, y1, y2)
-        if (window.map[x1][y1] != '#' and window.map[x2][y1] != '#'
-                and window.map[x1][y2] != '#' and window.map[x2][y2]):
-            return True
-        return False
-
-
-class Enemy():
-    def __init__(self, x, y, hp):
-        self.hp = hp
-        self.speed = 1
-        self.x = x
-        self.y = y
-
-    def move(self):
-        deleted_bullets = []
-        for i in range(len(bullets)):
-            bulleter = bullets[i].get_pos()
-            #print(bulleter, self.x, self.y)
-            if round(bulleter[0]) in range(round(self.x), round(self.x) + 40) and round(bulleter[1]) in range(round(self.y), round(self.y) + 40):
-                damaged_sound1.play()
-                deleted_bullets.append(i)
-                self.hp -= 20
-        deleted_bullets = sorted(deleted_bullets)
-        for _ in deleted_bullets:
-            del bullets[_]
-        #print(deleted_bullets)
-        destination = hero.get_pos()
-        dx = destination[0] - self.x
-        dy = destination[1] - self.y
-        if dy != 0 and dx != 0:
-            k = math.atan(dx / dy)
-            if destination[1] - self.y < 0:
-                dx, dy = -math.sin(k), -math.cos(k)
-            else:
-                dx, dy = math.sin(k), math.cos(k)
-        elif dx == 0 and dy > 0:
-            dx, dy = 0, 1
-        elif dy == 0 and dx > 0:
-            dx, dy = 1, 0
-        self.x += dx
-        self.y += dy
-        if self.hp < 1:
-            for i in range(len(enemies)):
-                if enemy == enemies[i]:
-                    del enemies[i]
-                    break
-
-
-pygame.init()
-a = ''
-FPS = 60
-size = width, height = 550, 550
-sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
-           'box': load_image('box.png'),
-           'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
-           'water': load_image('water.png')}
-shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
-damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
-move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
-bullets = []
-enemies = []
-screen = pygame.display.set_mode(size)
-window = Window(size)
-running = True
-menu = True
-move_left, move_right, move_up, move_down = False, False, False, False
-clock = pygame.time.Clock()
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            terminate()
-        if menu:
-            if len(a) != 0:
-                if os.path.exists(os.path.join('maps', a + '.txt')):
-                    window.input_map(a + '.txt')
-                    menu = False
-                    hero = Hero()
-                    trader = Trader()
-                    for i in range(window.map_size[1]):
-                        for j in range(window.map_size[0]):
-                            if window.map[i][j] == '-':
-                                x = j * window.block_size + window.block_size - window.enemy_width // 2
-                                y = i * window.block_size
-                                window.map[i][j] = '.'
-                                enemies.append(Enemy(x, y, 100))
-
-                else:
-                    print('несуществующая карта')
-                    terminate()
-        else:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_a:
-                    move_left = True
-                elif event.key == pygame.K_d:
-                    move_right = True
-                elif event.key == pygame.K_w:
-                    move_up = True
-                elif event.key == pygame.K_s:
-                    move_down = True
-            elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_a:
-                    move_left = False
-                elif event.key == pygame.K_d:
-                    move_right = False
-                elif event.key == pygame.K_w:
-                    move_up = False
-                elif event.key == pygame.K_s:
-                    move_down = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    shoot_sound1.play()
-                    speed = 4
-                    destination = list(event.pos)
-                    cords = [hero.get_pos()[0] + window.hero_width // 2,
-                             hero.get_pos()[1] + window.hero_height // 2]
-                    dx = destination[0] - cords[0]
-                    dy = destination[1] - cords[1]
-                    if dy != 0 and dx != 0:
-                        k = math.atan(dx / dy)
-                        if destination[1] - cords[1] < 0:
-                            dx, dy = -math.sin(k), -math.cos(k)
-                        else:
-                            dx, dy = math.sin(k), math.cos(k)
-                    elif dx == 0:
-                        dx, dy = 0, 1
-                    elif dy == 0:
-                        dx, dy = 1, 0
-                    bullets.append(Bullet([dx, dy], cords, speed))
-    if move_left:
-        move_sound1.play()
-        hero.move(-2, 0)
-    elif move_right:
-        move_sound1.play()
-        hero.move(2, 0)
-    if move_up:
-        move_sound1.play()
-        hero.move(0, -2)
-    elif move_down:
-        move_sound1.play()
-        hero.move(0, 2)
-    for bullet in bullets:
-        bullet.move()
-        if not bullet.a:
-            bullets.remove(bullet)
-    for enemy in enemies:
-        print(enemies)
-        enemy.move()
-    screen.fill((0, 0, 0))
-    window.render()
-    pygame.display.flip()
-    clock.tick(FPS)
-    if menu:
-        a = input()
