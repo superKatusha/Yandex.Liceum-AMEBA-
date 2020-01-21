@@ -110,9 +110,21 @@ class Window:
                                                            (self.block_size, self.block_size)),
                                     [j * self.block_size, i * self.block_size])
             for entity in entities:
-                screen.blit(pygame.transform.scale(sprites[entity.name],
-                                                   (entity.width, entity.height)),
-                            entity.get_pos())
+                global gun
+                if entity.name == 'hero' or entity.name == 'hero_ar-15' or entity.name == 'hero_AWP' or entity.name == 'hero_usp':
+                    if gun == 'pistol':
+                        name = 'hero_usp'
+                    elif gun == 'AR-15':
+                        name = 'hero_ar-15'
+                    else:
+                        name = 'hero_AWP'
+                    screen.blit(pygame.transform.scale(sprites[name],
+                                                       (entity.width, entity.height)),
+                                entity.get_pos())
+                else:
+                    screen.blit(pygame.transform.scale(sprites[entity.name],
+                                                       (entity.width, entity.height)),
+                                entity.get_pos())
             for bullet in bullets:
                             screen.blit(pygame.transform.scale(sprites['box'],
                                                                (self.bul_size, self.bul_size)),
@@ -157,6 +169,7 @@ class Entity:
     def __init__(self, rect, name):
         [self.x_pos, self.y_pos, self.width_pos, self.height_pos] = rect
         self.name = name
+        print(name)
 
     def get_rect(self):
         return [self.x_pos, self.y_pos, self.width_pos, self.height_pos]
@@ -173,7 +186,7 @@ class Trader(Entity):
     def __init__(self):
         self.width = int(round(0.7 * window.block_size))
         self.height = int(round(1 * window.block_size))
-        print(self.width, self.height, 'Trader')
+        #print(self.width, self.height, 'Trader')
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
                 if window.map[i][j] == 'T':
@@ -192,7 +205,7 @@ class Hero(Entity):
         global hp
         self.width = int(round(0.7 * window.block_size))
         self.height = int(round(1 * window.block_size))
-        print(self.width, self.height, 'Hero')
+        #print(self.width, self.height, 'Hero')
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
                 if window.map[i][j] == '@':
@@ -206,7 +219,7 @@ class Hero(Entity):
         dx = x
         dy = y
         col = collision(self, dx, dy)
-        print(col)
+        #print(col)
         if 0 <= self.x + dx < window.width - window.block_size:
             if col == 'False' or (col == 'Door' and len(enemies) == 0):
                 self.x += dx
@@ -224,10 +237,11 @@ class Hero(Entity):
 
 
 class Bullet(Window):
-    def __init__(self, delt, cords, speed):
+    def __init__(self, delt, cords, speed, dmg):
         [self.dx, self.dy] = delt
         [self.x, self.y] = cords
         self.speed = speed
+        self.dmg = dmg
         self.a = True
 
     def move(self):
@@ -236,6 +250,9 @@ class Bullet(Window):
             self.y += self.speed * self.dy
         else:
             self.a = False
+
+    def get_dmg(self):
+        return self.dmg
 
     def get_pos(self):
         return [self.x, self.y]
@@ -258,7 +275,7 @@ class Enemy(Entity):
         self.speed = 1
         self.width = int(round(0.7 * window.block_size))
         self.height = int(round(1 * window.block_size))
-        print(self.width, self.height, 'Enemy')
+        #print(self.width, self.height, 'Enemy')
         self.x = x
         self.y = y
         super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height],
@@ -271,7 +288,7 @@ class Enemy(Entity):
             if round(bulleter[0]) in range(round(self.x), round(self.x) + 40) and round(bulleter[1]) in range(round(self.y), round(self.y) + 40):
                 damaged_sound1.play()
                 deleted_bullets.append(i)
-                self.hp -= 20
+                self.hp -= bullets[i].get_dmg()
         deleted_bullets = sorted(deleted_bullets)
         for _ in deleted_bullets:
             del bullets[_]
@@ -310,14 +327,21 @@ class Enemy(Entity):
 pygame.init()
 a = ''
 FPS = 60
-global hp, bullets_count
+global hp, bullets_count, gun, position, guns
+guns = ['pistol', 'AR-15', 'AWP', 'AK-47', 'M249']
+ammo_1 = 40
+ammo_2 = 250
+ammo_3 = 30
+position = 0
+gun = guns[position]
 hp = 100
 size = width, height = 550, 650
 sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'box': load_image('box.png'), 'trader': load_image('trader.png'),
            'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
            'water': load_image('water.png'), 'hp': load_image('hp.png'),
-           'bull': load_image('bullet.png')}
+           'bull': load_image('bullet.png'), 'hero_usp': load_image('Skin_USP.png'),
+           'hero_ar-15': load_image('Skin_AR-15.png'), 'hero_AWP': load_image('Skin_AWP.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
@@ -325,7 +349,7 @@ shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
 damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
 move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
 bullets = []
-bullets_count = 45
+bullets_count = ammo_1
 enemies = []
 entities = []
 screen = pygame.display.set_mode(size)
@@ -373,6 +397,18 @@ while running:
                     move_up = True
                 elif event.key == pygame.K_s:
                     move_down = True
+                elif event.key == pygame.K_1:
+                    position = 0
+                    gun = guns[0]
+                    bullets_count = ammo_1
+                elif event.key == pygame.K_2:
+                    position = 1
+                    gun = guns[1]
+                    bullets_count = ammo_2
+                elif event.key == pygame.K_3:
+                    position = 2
+                    gun = guns[2]
+                    bullets_count = ammo_3
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
                     move_left = False
@@ -387,26 +423,42 @@ while running:
                     move_down = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    shoot_sound1.play()
-                    speed = 4
-                    destination = list(event.pos)
-                    cords = [hero.get_pos()[0] + hero.width // 2,
-                             hero.get_pos()[1] + hero.height // 2]
-                    dx = destination[0] - cords[0]
-                    dy = destination[1] - cords[1]
-                    if dy != 0 and dx != 0:
-                        k = math.atan(dx / dy)
-                        if destination[1] - cords[1] < 0:
-                            dx, dy = -math.sin(k), -math.cos(k)
-                        else:
-                            dx, dy = math.sin(k), math.cos(k)
-                    elif dx == 0:
-                        dx, dy = 0, 1
-                    elif dy == 0:
-                        dx, dy = 1, 0
-                    if bullets_count > 0:
-                        bullets_count -= 1
-                        bullets.append(Bullet([dx, dy], cords, speed))
+                    ranger = 0
+                    if gun == 'pistol':
+                        ammo_1 -= 1
+                        ranger = 1
+                    elif gun == 'AR-15':
+                        ammo_2 -= 1
+                        ranger = 1
+                    elif gun == 'AWP':
+                        ammo_3 -= 1
+                        ranger = 1
+                    for i in range(ranger):
+                        shoot_sound1.play()
+                        speed = 4
+                        destination = list(event.pos)
+                        cords = [hero.get_pos()[0] + hero.width // 2,
+                                 hero.get_pos()[1] + hero.height // 2]
+                        dx = destination[0] - cords[0]
+                        dy = destination[1] - cords[1]
+                        if dy != 0 and dx != 0:
+                            k = math.atan(dx / dy)
+                            if destination[1] - cords[1] < 0:
+                                dx, dy = -math.sin(k), -math.cos(k)
+                            else:
+                                dx, dy = math.sin(k), math.cos(k)
+                        elif dx == 0:
+                            dx, dy = 0, 1
+                        elif dy == 0:
+                            dx, dy = 1, 0
+                        if bullets_count > 0:
+                            bullets_count -= 1
+                            if gun == 'AWP':
+                                bullets.append(Bullet([dx, dy], cords, speed + speed, 80))
+                            elif gun == 'AR-15':
+                                bullets.append(Bullet([dx, dy], cords, speed + 2, 25))
+                            else:
+                                bullets.append(Bullet([dx, dy], cords, speed, 15))
     if move_left:
         channel1.play(move_sound1)
         hero.move(-2, 0)
