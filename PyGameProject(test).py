@@ -74,7 +74,7 @@ class Window:
         self.height = size[1]
         self.map = []
         self.map_size = []
-        self.block_size = 0
+        self.block_size, self.old_block_size, self.scale = 0, 0, 0
         self.bul_size = 10
         self.room_x, self.room_y, self.room_width, self.room_height = 0, 0, 0, 0
         self.dx, self.dy = 0, 0
@@ -101,28 +101,28 @@ class Window:
                 for j in range(self.room_x, self.room_x + self.room_width + 1):
                     if self.map[i][j] == '.':
                         screen.blit(pygame.transform.scale(sprites['grass'],
-                                                           (self.block_size, self.block_size)),
-                                    [self.dx + j * self.block_size, self.dy + i * self.block_size])
+                                                           (self.x, self.x)),
+                                    [self.dx + j * self.x, self.dy + i * self.x])
                     elif self.map[i][j] == 'd':
                         screen.blit(pygame.transform.scale(sprites['grass'],
-                                                           (self.block_size, self.block_size)),
-                                    [self.dx + j * self.block_size, self.dy + i * self.block_size])
+                                                           (self.x, self.x)),
+                                    [self.dx + j * self.x, self.dy + i * self.x])
                         if len(enemies) == 0:
                             screen.blit(pygame.transform.scale(sprites['open_door'],
-                                                               (self.block_size, self.block_size)),
-                                        [self.dx + j * self.block_size, self.dy + i * self.block_size])
+                                                               (self.x, self.x)),
+                                        [self.dx + j * self.x, self.dy + i * self.x])
                         else:
                             screen.blit(pygame.transform.scale(sprites['closed_door'],
-                                                               (self.block_size, self.block_size)),
-                                        [self.dx + j * self.block_size, self.dy + i * self.block_size])
+                                                               (self.x, self.x)),
+                                        [self.dx + j * self.x, self.dy + i * self.x])
                     elif self.map[i][j] == '~':
                         screen.blit(pygame.transform.scale(sprites['water'],
-                                                           (self.block_size, self.block_size)),
-                                    [self.dx + j * self.block_size, self.dy + i * self.block_size])
+                                                           (self.x, self.x)),
+                                    [self.dx + j * self.x, self.dy + i * self.x])
                     elif self.map[i][j] in '#=':
                         screen.blit(pygame.transform.scale(sprites['box'],
-                                                           (self.block_size, self.block_size)),
-                                    [self.dx + j * self.block_size, self.dy + i * self.block_size])
+                                                           (self.x, self.x)),
+                                    [self.dx + j * self.x, self.dy + i * self.x])
                     # elif self.map[i][j] == '0':
                     #     screen.blit(pygame.transform.scale(sprites['black'],
                     #                                        (self.block_size, self.block_size)),
@@ -131,28 +131,32 @@ class Window:
                 if (self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
                         self.room_y + self.room_height > entity.y // window.block_size > self.room_y - 1):
                     screen.blit(pygame.transform.scale(sprites[entity.name],
-                                                       (entity.width, entity.height)),
+                                                       (int(entity.width * self.scale), int(entity.height * self.scale))),
                                 [self.dx + entity.x, self.dy + entity.y])
             for bullet in bullets:
                 screen.blit(pygame.transform.scale(sprites['box'],
-                                                   (self.bul_size, self.bul_size)),
+                                                   (int(self.bul_size * self.scale), int(self.bul_size * self.scale))),
                             [self.dx + bullet.x, self.dy + bullet.y])
 
     def set_room(self, *rect):
         # получение координат границ текущей комнаты
         [self.room_x, self.room_y, self.room_width, self.room_height] = rect
-        self.block_size = min(self.width, self.height) // max(self.room_width, self.room_height)
-        if self.room_width > self.room_height:
-            # self.dy = (self.room_width - self.room_height) * self.block_size // 2 - self.room_y * self.block_size
-            self.dy = - self.room_y * self.block_size
-            pass
-        elif self.room_width < self.room_height:
-            # self.dx = (self.room_height - self.room_width) * self.block_size // 2 - self.room_x * self.block_size
-            self.dx = - self.room_x * self.block_size
-            pass
+        self.x = int(self.block_size * self.scale)
+        # self.old_block_size = self.block_size
+        a = min(self.width, self.height) // max(13 + 1, 12 + 1)
+        if self.block_size == 0:
+            self.block_size = 35
+            print(1)
+        self.scale = 35 / self.block_size
+        self.dy = int(- self.room_y * self.block_size + (self.height - self.room_height * self.block_size) / 3)
+        self.dx = int(- self.room_x * self.block_size + (self.width - self.room_width * self.block_size) / 2)
+        # if self.room_width >=  self.dy = (self.room_width - self.room_height) * self.x // 2 - self.room_y * self.x
+        # elif self.room_width <= self.room_height:self.room_height:
+        #         #
+        # self.dx = (self.room_height - self.room_width) * self.x // 2 - self.room_x * self.x
         for i in range(self.room_y, self.room_y + self.room_height + 1):
-            print(self.map[i][self.room_x: self.room_x + self.room_width])
-        print(self.dx, self.dy)
+            print(self.map[i][self.room_x: self.room_x + self.room_width + 1])
+        print(self.room_x, self.room_y, self.room_width, self.room_height, self.dx, self.dy,self.scale)
 
 
 def collision(ent, x, y):
@@ -161,18 +165,18 @@ def collision(ent, x, y):
     x2 = x1 + width
     y1 += y
     y2 = y1 + height
-    map_y1 = int(x1 // window.block_size)
-    map_y2 = int(x2 // window.block_size)
-    map_x1 = int(y1 // window.block_size)
-    map_x2 = int(y2 // window.block_size)
-    print('x1y1: {}'.format(window.map[map_x1][map_y1]))
-    print('x2y1: {}'.format(window.map[map_x2][map_y1]))
-    print('x1y2: {}'.format(window.map[map_x1][map_y2]))
-    print('x2y2: {}'.format(window.map[map_x2][map_y2]))
-    if (window.map[map_x1][map_y1] in '#=' or
-        window.map[map_x1][map_y2] in '#=' or
-        window.map[map_x2][map_y1] in '#=' or
-        window.map[map_x2][map_y2] in '#='):
+    map_x1 = int(x1 // window.block_size)
+    map_x2 = int(x2 // window.block_size)
+    map_y1 = int(y1 // window.block_size)
+    map_y2 = int(y2 // window.block_size)
+    print('x1y1: {}'.format(window.map[map_y1][map_x1]))
+    print('x2y1: {}'.format(window.map[map_y1][map_x2]))
+    print('x1y2: {}'.format(window.map[map_y2][map_x1]))
+    print('x2y2: {}'.format(window.map[map_y2][map_x2]))
+    if (window.map[map_y1][map_x1] in '#=' or
+        window.map[map_y1][map_x2] in '#=' or
+        window.map[map_y2][map_x1] in '#=' or
+        window.map[map_y2][map_x2] in '#='):
         return 'Wall'
     for entity in entities:
         if entity != ent:
@@ -185,30 +189,30 @@ def collision(ent, x, y):
                     (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
                 return entity
     if ent.name == 'hero':
-        if (window.map[map_x1][map_y1] == 'd' or
-            window.map[map_x1][map_y2] == 'd') and (
-            window.map[map_x2][map_y1] == '.' or
-            window.map[map_x2][map_y2] == '.'):
+        if (window.map[map_y1][map_x1] == 'd' and
+            window.map[map_y1][map_x2] == 'd' and
+            window.map[map_y2][map_x1] == '.' and
+            window.map[map_y2][map_x2] == '.'):
             return 'DoorD'
-        elif (window.map[map_x1][map_y1] == '.' or
-              window.map[map_x1][map_y2] == '.') and (
-              window.map[map_x2][map_y1] == 'd' or
-              window.map[map_x2][map_y2] == 'd'):
+        elif (window.map[map_y1][map_x1] == '.' and
+              window.map[map_y1][map_x2] == '.' and
+              window.map[map_y2][map_x1] == 'd' and
+              window.map[map_y2][map_x2] == 'd'):
               return 'DoorU'
-        elif (window.map[map_x1][map_y1] == 'd' or
-              window.map[map_x2][map_y1] == 'd') and (
-              window.map[map_x1][map_y2] == '.' or
-              window.map[map_x2][map_y2] == '.'):
+        elif (window.map[map_y1][map_x1] == 'd' and
+              window.map[map_y1][map_x2] == '.' and
+              window.map[map_y2][map_x1] == 'd' and
+              window.map[map_y2][map_x2] == '.'):
               return 'DoorR'
-        elif (window.map[map_x1][map_y1] == '.' or
-              window.map[map_x2][map_y1] == '.') and (
-              window.map[map_x1][map_y2] == 'd' or
-              window.map[map_x2][map_y2] == 'd'):
+        elif (window.map[map_y1][map_x1] == '.' and
+              window.map[map_y1][map_x2] == 'd' and
+              window.map[map_y2][map_x1] == '.' and
+              window.map[map_y2][map_x2] == 'd'):
               return 'DoorL'
-    if (window.map[map_x1][map_y1] == 'd' or
-        window.map[map_x1][map_y2] == 'd' or
-        window.map[map_x2][map_y1] == 'd' or
-        window.map[map_x2][map_y2] == 'd'):
+    if (window.map[map_y1][map_x1] == 'd' or
+        window.map[map_y1][map_x2] == 'd' or
+        window.map[map_y2][map_x1] == 'd' or
+        window.map[map_y2][map_x2] == 'd'):
         return 'Door'
     return 'False'
 
@@ -262,32 +266,41 @@ class Hero(Entity):
         super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], 'hero')
 
     def move(self, x, y):
+        print(self.x, self.y)
         dx = x
         dy = y
         col = collision(self, dx, dy)
         print(col)
         # перемещение героя
-        if 0 <= self.x + dx < window.width - window.block_size:
-            if col == 'False' or ('Door' in col):
-                self.x += dx
-            else:
-                dx = 0
-        if 0 <= self.y + dy < window.height - window.block_size:
-            if col == 'False' or ('Door' in col):
-                self.y += dy
-            else:
-                dy = 0
+        if col in ['False', 'Door', 'DoorU', 'DoorD', 'DoorR', 'DoorL']:
+            self.x += dx
+            self.y += dy
+        else:
+            dx = 0
+            dy = 0
+        for i in range(window.map_size[0]):
+            tmp = []
+            for j in range(window.map_size[1]):
+                if j == self.x_pos // window.block_size and i == self.y_pos // window.block_size:
+                    tmp.append('@')
+                else:
+                    tmp.append(window.map[i][j])
+            print(tmp)
         # обновление текущей комнаты
         if col == 'DoorD':
             self.room_upd('D')
+            print('D')
         elif col == 'DoorU':
             self.room_upd('U')
+            print('U')
         elif col == 'DoorR':
             self.room_upd('R')
+            print('R')
         elif col == 'DoorL':
             self.room_upd('L')
+            print('L')
         super().move(dx, dy)
-        print(dx, dy)
+        # print(dx, dy, self.x // window.block_size, self.y // window.block_size, self.x_pos, self.y_pos)
 
     def room_init(self, i, j):
         for x in range(j, -1, -1):
@@ -306,18 +319,17 @@ class Hero(Entity):
             if window.map[y][j] in 'd0=':
                 self.room_y1 = y
                 break
-        window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x + 1, self.room_y1 - self.room_y)
+        window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y)
+        print(1)
 
     def room_upd(self, key):
         if key == 'D':
-            print('D')
             self.room_y = self.y // window.block_size
             for x in range(self.x // window.block_size, -1, -1):
                 if window.map[self.room_y + 1][x] in 'd0=':
                     self.room_x = x
                     break
         elif key == 'U':
-            print('U')
             for y in range(self.y // window.block_size - 1, -1, -1):
                 if window.map[y][self.x // window.block_size] in 'd0=':
                     self.room_y = y
@@ -327,14 +339,12 @@ class Hero(Entity):
                     self.room_x = x
                     break
         elif key == 'R':
-            print('R')
             self.room_x = self.x // window.block_size
             for y in range(self.y // window.block_size, -1, -1):
                 if window.map[y][self.room_x + 1] in 'd0=':
                     self.room_y = y
                     break
         elif key == 'L':
-            print('L')
             for x in range(self.x // window.block_size - 1, -1, -1):
                 if window.map[self.y // window.block_size][x] in 'd0=':
                     self.room_x = x
@@ -351,8 +361,11 @@ class Hero(Entity):
             if window.map[y][self.room_x + 1] in 'd0=':
                 self.room_y1 = y
                 break
-        print([self.room_x, self.room_y, self.room_x1 - self.room_x + 1, self.room_y1 - self.room_y])
-        window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x + 1, self.room_y1 - self.room_y)
+        print([self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y])
+        window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y)
+
+    def redraw(self):
+        pass
 
     def get_pos(self):
         return [self.x, self.y]
@@ -361,7 +374,7 @@ class Hero(Entity):
 class Bullet(Window):
     def __init__(self, delt, cords, speed):
         [self.dx, self.dy] = delt
-        self.x, self.y = cords[0] - window.dx, cords[1] - dy
+        self.x, self.y = cords[0], cords[1]
         self.speed = speed
         self.a = True
 
@@ -380,7 +393,6 @@ class Bullet(Window):
         y2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
         x1 = int((self.y + self.speed * self.dy) // window.block_size)
         x2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
-        #print(x1, x2, y1, y2)
         if (window.map[x1][y1] not in '#d' and window.map[x2][y1] not in '#d'
                 and window.map[x1][y2] not in '#d' and window.map[x2][y2] not in '#d'):
             return True
@@ -423,16 +435,13 @@ class Enemy(Entity):
             dx, dy = 0, 1
         elif dy == 0 and dx > 0:
             dx, dy = 1, 0
-        if 0 <= self.x + dx <= window.width - window.block_size:
-            if collision(self, dx, dy) == 'False':
-                self.x += dx
-            else:
-                dx = 0
-        if 0 <= self.y + dy <= window.height - window.block_size:
-            if collision(self, dx, dy) == 'False':
-                self.y += dy
-            else:
-                dy = 0
+        col = collision(self, dx, dy)
+        if col == 'False':
+            self.x += dx
+            self.y += dy
+        else:
+            dx = 0
+            dy = 0
         super().move(dx, dy)
         if self.hp < 1:
             enemies.remove(self)
@@ -528,6 +537,8 @@ while running:
                     shoot_sound1.play()
                     speed = 4
                     destination = list(event.pos)
+                    destination[0] -= window.dx
+                    destination[1] -= window.dy
                     cords = [hero.get_pos()[0] + hero.width // 2,
                              hero.get_pos()[1] + hero.height // 2]
                     dx = destination[0] - cords[0]
