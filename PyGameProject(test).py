@@ -137,6 +137,10 @@ class Window:
                 screen.blit(pygame.transform.scale(sprites['box'],
                                                    (int(self.bul_size * self.scale), int(self.bul_size * self.scale))),
                             [self.dx + bullet.x, self.dy + bullet.y])
+            if inventory:
+                screen.blit(pygame.transform.scale(sprites['inventory'],
+                                                   (150, 650)),
+                            [400, 0])
 
     def set_room(self, *rect):
         # получение координат границ текущей комнаты
@@ -461,7 +465,7 @@ sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
            'water': load_image('water.png'), 'hp': load_image('hp.png'),
            'bull': load_image('bullet.png'), 'open_door': load_image('open_door.png'),
-           'closed_door': load_image('closed_door.png')}
+           'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
@@ -477,6 +481,7 @@ screen = pygame.display.set_mode(size)
 window = Window(size)
 running = True
 menu = True
+inventory = False
 move_left, move_right, move_up, move_down = False, False, False, False
 clock = pygame.time.Clock()
 while running:
@@ -520,6 +525,8 @@ while running:
                     move_up = True
                 elif event.key == pygame.K_s:
                     move_down = True
+                elif event.key == pygame.K_i:
+                    inventory = not inventory
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
                     move_left = False
