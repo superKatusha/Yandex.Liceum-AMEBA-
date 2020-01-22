@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pygame
 import os
 import sys
@@ -454,6 +453,21 @@ class Enemy(Entity):
 
     def get_pos(self):
         return [self.x, self.y]
+
+
+class Item:
+    def __init__(self):
+        pass
+
+
+class Weapon:
+    def __init__(self):
+        pass
+
+
+class Staff:
+    def __init__(self):
+        pass
 
 
 pygame.init()
