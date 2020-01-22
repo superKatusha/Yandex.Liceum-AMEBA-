@@ -96,7 +96,6 @@ class Window:
             start_screen()  # меню игры
         else:
             indicators()  # отрисовка индикаторов (хп, патроны и т.д.)
-            # print(self.dx, self.dy)
             for i in range(self.room_y, self.room_y + self.room_height + 1):
                 for j in range(self.room_x, self.room_x + self.room_width + 1):
                     if self.map[i][j] == '.':
@@ -123,10 +122,6 @@ class Window:
                         screen.blit(pygame.transform.scale(sprites['box'],
                                                            (self.x, self.x)),
                                     [self.dx + j * self.x, self.dy + i * self.x])
-                    # elif self.map[i][j] == '0':
-                    #     screen.blit(pygame.transform.scale(sprites['black'],
-                    #                                        (self.block_size, self.block_size)),
-                    #                 [j * self.block_size, i * self.block_size])
             for entity in entities:
                 global gun
                 if ((self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
@@ -339,6 +334,7 @@ class Hero(Entity):
             if window.map[y][j] in 'd0=':
                 self.room_y1 = y
                 break
+        print([self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y])
         window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y)
         print(1)
 
@@ -476,13 +472,17 @@ class Enemy(Entity):
 
 
 class Item:
-    def __init__(self):
-        pass
+    def __init__(self, name):
+        self.name = name
 
 
-class Weapon:
-    def __init__(self):
-        pass
+class Weapon(Item):
+    def __init__(self, b_speed, dmg, magazin, fire_rate, name):
+        self.b_speed = b_speed
+        self.dmg = dmg
+        self.magazin = magazin
+        self.fire_rate = fire_rate
+        self.name = name
 
 
 class Staff:
