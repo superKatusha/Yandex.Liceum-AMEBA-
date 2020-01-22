@@ -1,4 +1,4 @@
-м# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import pygame
 import os
 import sys
@@ -45,7 +45,7 @@ def start_screen():
 def indicators():
     intro_text = [str(hp)]
     font = pygame.font.Font(None, 35)
-    text_coord = [105, 548]
+    text_coord = [405, 548]
     for line in intro_text:
         string_rendered = font.render(line, 1, (255, 0, 0))
         line_rect = string_rendered.get_rect()
@@ -53,10 +53,10 @@ def indicators():
         text_coord[1] += line_rect[3] + 30
     screen.blit(pygame.transform.scale(sprites['hp'],
                                        (30, 30)),
-                [150, 545])
+                [350, 545])
     intro_text = [str(bullets_count)]
     font = pygame.font.Font(None, 35)
-    text_coord = [105, 578]
+    text_coord = [405, 578]
     for line in intro_text:
         string_rendered = font.render(line, 1, (255, 0, 0))
         line_rect = string_rendered.get_rect()
@@ -64,7 +64,7 @@ def indicators():
         text_coord[1] += line_rect[3] + 30
     screen.blit(pygame.transform.scale(sprites['bull'],
                                        (50, 30)),
-                [140, 575])
+                [340, 575])
 
 
 class Window:
@@ -128,9 +128,8 @@ class Window:
                     #                                        (self.block_size, self.block_size)),
                     #                 [j * self.block_size, i * self.block_size])
             for entity in entities:
-                if ((self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
-                        self.room_y + self.room_height > entity.y // window.block_size > self.room_y - 1) or
-                        entity.name == 'hero'):
+                if (self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
+                        self.room_y + self.room_height > entity.y // window.block_size > self.room_y - 1):
                     screen.blit(pygame.transform.scale(sprites[entity.name],
                                                        (int(entity.width * self.scale), int(entity.height * self.scale))),
                                 [self.dx + entity.x, self.dy + entity.y])
@@ -456,17 +455,6 @@ class Enemy(Entity):
         return [self.x, self.y]
 
 
-class Item:
-    def __init__(self):
-
-
-class Weapon:
-    def __init__(self):
-
-
-class Staff:
-    def __init__(self):
-
 pygame.init()
 a = ''
 FPS = 60
@@ -538,7 +526,6 @@ while running:
                 elif event.key == pygame.K_s:
                     move_down = True
                 elif event.key == pygame.K_i:
-                    print(121)
                     inventory = not inventory
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
