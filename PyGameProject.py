@@ -89,6 +89,28 @@ def draw_inventory():
                     [cords[0] + dx, cords[1] + dy])
 
 
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
+
 class Window:
     def __init__(self, size):
         global entities
@@ -152,7 +174,7 @@ class Window:
                         entity.name == 'hero'):
                     # отрисовка предмета в руках героя
                     if inventory[active] != 0 and entity.name == 'hero':
-                        screen.blit(pygame.transform.scale(sprites[entity.name],
+                        screen.blit(pygame.transform.scale(sprites[entity.name].image,
                                                            (int(entity.width * self.scale),
                                                             int(entity.height * self.scale))),
                                     [self.dx + entity.x, self.dy + entity.y])
@@ -161,10 +183,16 @@ class Window:
                                                             int(entity.height * self.scale * 0.85))),
                                     [self.dx + entity.x, self.dy + entity.y + 10])
                     else:
-                        screen.blit(pygame.transform.scale(sprites[entity.name],
-                                                           (int(entity.width * self.scale),
-                                                            int(entity.height * self.scale))),
-                                    [self.dx + entity.x, self.dy + entity.y])
+                        if type(sprites[entity.name]) is AnimatedSprite:
+                            screen.blit(pygame.transform.scale(sprites[entity.name].image,
+                                                               (int(entity.width * self.scale),
+                                                                int(entity.height * self.scale))),
+                                        [self.dx + entity.x, self.dy + entity.y])
+                        else:
+                            screen.blit(pygame.transform.scale(sprites[entity.name],
+                                                               (int(entity.width * self.scale),
+                                                                int(entity.height * self.scale))),
+                                        [self.dx + entity.x, self.dy + entity.y])
 
             for bullet in bullets:
                 # отрисовка пуль
@@ -216,9 +244,9 @@ def collision(ent, x, y):
             x22 = x21 + width2
             y22 = y21 + height2
             if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
-                    (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
-                    (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
-                    (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
+                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
+                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
+                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
                 return entity
     if ent.name == 'hero':
         if (window.map[map_y1][map_x1] == 'd' and
@@ -246,6 +274,19 @@ def collision(ent, x, y):
         window.map[map_y2][map_x1] == 'd' or
         window.map[map_y2][map_x2] == 'd'):
         return 'Door'
+    if ent.name == 'enemy':
+        damage = 0
+        for bullet in bullets:
+            [x21, y21] = bullet.get_pos()
+            x22, y22 = x21 + 7, y21 + 7
+            if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
+                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
+                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
+                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
+                damage += bullet.dmg
+                bullets.remove(bullet)
+        if damage != 0:
+            return damage
     return 'False'
 
 
@@ -448,16 +489,6 @@ class Enemy(Entity):
                          'enemy')
 
     def move(self):
-        deleted_bullets = []
-        for i in range(len(bullets)):
-            bulleter = bullets[i].get_pos()
-            if round(bulleter[0]) in range(round(self.x), round(self.x) + 40) and round(bulleter[1]) in range(round(self.y), round(self.y) + 40):
-                damaged_sound1.play()
-                deleted_bullets.append(i)
-                self.hp -= bullets[i].get_dmg()
-        deleted_bullets = sorted(deleted_bullets)
-        for _ in deleted_bullets:
-            del bullets[_]
         destination = hero.get_pos()
         dx = destination[0] - self.x
         dy = destination[1] - self.y
@@ -476,6 +507,10 @@ class Enemy(Entity):
             self.x += dx
             self.y += dy
         else:
+            print(col)
+            if col is int:
+                self.hp -= col
+                damaged_sound1.play()
             dx = 0
             dy = 0
         super().move(dx, dy)
@@ -493,14 +528,51 @@ class Item:
 
 
 class Weapon(Item):
-    def __init__(self, b_speed, dmg, magazin, fire_rate, name, ammo):
+    def __init__(self, b_speed, dmg, magazin, fire_rate, name, ammo, bul_count=1):
         self.b_speed = b_speed
         self.dmg = dmg
         self.magazin = magazin
         self.fire_rate = fire_rate
         self.name = name
         self.ammo = ammo
+        self.bul_count = bul_count
+        self.cooldown = 0
         super().__init__(self.name)
+
+    def shoot(self, destination):
+        if self.cooldown == 0:
+            self.cooldown = int(60 / self.fire_rate)
+            if self.bul_count % 2 == 1:
+                shoot_sound1.play()
+                destination[0] -= window.dx
+                destination[1] -= window.dy
+                cords = [hero.get_pos()[0] + hero.width // 2,
+                         hero.get_pos()[1] + hero.height // 2]
+                dx = destination[0] - cords[0]
+                dy = destination[1] - cords[1]
+                if dy != 0:
+                    k = math.atan(dx / dy)
+                    if destination[1] - cords[1] < 0:
+                        dx, dy = -math.sin(k), -math.cos(k)
+                    else:
+                        dx, dy = math.sin(k), math.cos(k)
+                elif dy == 0:
+                    dx, dy = 1, 0
+                ammo[inventory[active].ammo] -= 1
+                bullets.append(Bullet([dx, dy], cords, self.b_speed, self.dmg))
+                if self.bul_count > 1:
+                    if destination[1] - cords[1] < 0:
+                        dx, dy = -math.sin(k + math.pi/12), -math.cos(k + math.pi/12)
+                    else:
+                        dx, dy = math.sin(k + math.pi/12), math.cos(k + math.pi/12)
+                    bullets.append(Bullet([dx, dy], cords, self.b_speed, self.dmg))
+                    if destination[1] - cords[1] < 0:
+                        dx, dy = -math.sin(k - math.pi/12), -math.cos(k - math.pi/12)
+                    else:
+                        dx, dy = math.sin(k - math.pi/12), math.cos(k - math.pi/12)
+                    bullets.append(Bullet([dx, dy], cords, self.b_speed, self.dmg))
+        else:
+            self.cooldown -= 1
 
 
 class Staff(Item):
@@ -515,19 +587,21 @@ FPS = 60
 guns = [Weapon(2, 25, 25, 3, 'pistol', '9mm'),
         Weapon(3, 40, 30, 5, 'auto', '5.56mm'),
         Weapon(6, 100, 5, 0.5, 'snipe', '7.62mm'),
-        Weapon(3, 30, 5, 0.5, 'shotgun', '12mm')]
+        Weapon(3, 30, 5, 0.5, 'shotgun', '12mm', 3)]
 ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10, '12mm': 10}
 active = 0
 hp = 100
+step = 0
 size = width, height = 550, 650
-sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
+sprites = {'grass': load_image('grass.png'), 'hero': AnimatedSprite(load_image('skin2-gif.png'), 10, 2, 477, 699),
            'box': load_image('box.png'), 'trader': load_image('trader.png'),
            'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
            'water': load_image('water.png'), 'hp': load_image('hp.png'),
            'bull': load_image('bullet-i.png'), 'open_door': load_image('open_door.png'),
            'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory.png'),
            'pistol': load_image('pistol.png'), 'auto': load_image('auto.png'),
-           'snipe': load_image('snipe.png'), 'bullet': load_image('bullet.png')}
+           'snipe': load_image('snipe.png'), 'bullet': load_image('bullet.png'),
+           'shotgun': load_image('shotgun.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
@@ -539,7 +613,7 @@ bullets_count = guns[active].magazin
 enemies = []
 traders = []
 entities = []
-inventory = [guns[0], guns[1], guns[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+inventory = [guns[0], guns[1], guns[2], guns[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 x, y = 0, 0
 grab_from, grab_item = 0, 0
 screen = pygame.display.set_mode(size)
@@ -648,24 +722,7 @@ while running:
                         if ammo[inventory[active].ammo] > 0:
                             shoot_sound1.play()
                             destination = list(event.pos)
-                            destination[0] -= window.dx
-                            destination[1] -= window.dy
-                            cords = [hero.get_pos()[0] + hero.width // 2,
-                                     hero.get_pos()[1] + hero.height // 2]
-                            dx = destination[0] - cords[0]
-                            dy = destination[1] - cords[1]
-                            if dy != 0 and dx != 0:
-                                k = math.atan(dx / dy)
-                                if destination[1] - cords[1] < 0:
-                                    dx, dy = -math.sin(k), -math.cos(k)
-                                else:
-                                    dx, dy = math.sin(k), math.cos(k)
-                            elif dx == 0:
-                                dx, dy = 0, 1
-                            elif dy == 0:
-                                dx, dy = 1, 0
-                            ammo[inventory[active].ammo] -= 1
-                            bullets.append(Bullet([dx, dy], cords, inventory[active].b_speed, inventory[active].dmg))
+                            inventory[active].shoot(destination)
             elif event.type == pygame.MOUSEBUTTONUP:
                 # перетаскивание предметов в инвентаре
                 if grab:
@@ -724,6 +781,11 @@ while running:
         for j in range(len(entities) - 1):
             if entities[j].get_pos()[1] > entities[j + 1].get_pos()[1]:
                 entities[j], entities[j + 1] = entities[j + 1], entities[j]
+    if step == 5:
+        sprites['hero'].update()
+        step = 0
+    else:
+        step += 1
     window.render()
     pygame.display.flip()
     clock.tick(FPS)
