@@ -89,6 +89,77 @@ def draw_inventory():
                     [cords[0] + dx, cords[1] + dy])
 
 
+def collision(ent, x, y):
+    [x1, y1, width, height] = ent.get_rect()
+    x1 += x
+    x2 = x1 + width
+    y1 += y
+    y2 = y1 + height
+    map_x1 = int(x1 // window.block_size)
+    map_x2 = int(x2 // window.block_size)
+    map_y1 = int(y1 // window.block_size)
+    map_y2 = int(y2 // window.block_size)
+    print('x1y1: {}'.format(window.map[map_y1][map_x1]))
+    print('x2y1: {}'.format(window.map[map_y1][map_x2]))
+    print('x1y2: {}'.format(window.map[map_y2][map_x1]))
+    print('x2y2: {}'.format(window.map[map_y2][map_x2]))
+    if (window.map[map_y1][map_x1] in '#=' or
+        window.map[map_y1][map_x2] in '#=' or
+        window.map[map_y2][map_x1] in '#=' or
+        window.map[map_y2][map_x2] in '#='):
+        return 'Wall'
+    for entity in entities:
+        if entity != ent:
+            [x21, y21, width2, height2] = entity.get_rect()
+            x22 = x21 + width2
+            y22 = y21 + height2
+            if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
+                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
+                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
+                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
+                return entity
+    if ent.name == 'hero':
+        if (window.map[map_y1][map_x1] == 'd' and
+            window.map[map_y1][map_x2] == 'd' and
+            window.map[map_y2][map_x1] == '.' and
+            window.map[map_y2][map_x2] == '.'):
+            return 'DoorD'
+        elif (window.map[map_y1][map_x1] == '.' and
+              window.map[map_y1][map_x2] == '.' and
+              window.map[map_y2][map_x1] == 'd' and
+              window.map[map_y2][map_x2] == 'd'):
+              return 'DoorU'
+        elif (window.map[map_y1][map_x1] == 'd' and
+              window.map[map_y1][map_x2] == '.' and
+              window.map[map_y2][map_x1] == 'd' and
+              window.map[map_y2][map_x2] == '.'):
+              return 'DoorR'
+        elif (window.map[map_y1][map_x1] == '.' and
+              window.map[map_y1][map_x2] == 'd' and
+              window.map[map_y2][map_x1] == '.' and
+              window.map[map_y2][map_x2] == 'd'):
+              return 'DoorL'
+    if (window.map[map_y1][map_x1] == 'd' or
+        window.map[map_y1][map_x2] == 'd' or
+        window.map[map_y2][map_x1] == 'd' or
+        window.map[map_y2][map_x2] == 'd'):
+        return 'Door'
+    if ent.name == 'enemy':
+        damage = 0
+        for bullet in bullets:
+            [x21, y21] = bullet.get_pos()
+            x22, y22 = x21 + 7, y21 + 7
+            if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
+                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
+                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
+                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
+                damage += bullet.dmg
+                bullets.remove(bullet)
+        if damage != 0:
+            return damage
+    return 'False'
+
+
 class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         self.frames = []
@@ -203,7 +274,6 @@ class Window:
                 # отрисовка инвенторя
                 draw_inventory()
 
-
     def set_room(self, *rect):
         # получение координат границ текущей комнаты и расчёты координат для её отрисовки
         [self.room_x, self.room_y, self.room_width, self.room_height] = rect
@@ -217,77 +287,6 @@ class Window:
         for i in range(self.room_y, self.room_y + self.room_height + 1):
             print(self.map[i][self.room_x: self.room_x + self.room_width + 1])
         print(self.room_x, self.room_y, self.room_width, self.room_height, self.dx, self.dy, self.scale)
-
-
-def collision(ent, x, y):
-    [x1, y1, width, height] = ent.get_rect()
-    x1 += x
-    x2 = x1 + width
-    y1 += y
-    y2 = y1 + height
-    map_x1 = int(x1 // window.block_size)
-    map_x2 = int(x2 // window.block_size)
-    map_y1 = int(y1 // window.block_size)
-    map_y2 = int(y2 // window.block_size)
-    print('x1y1: {}'.format(window.map[map_y1][map_x1]))
-    print('x2y1: {}'.format(window.map[map_y1][map_x2]))
-    print('x1y2: {}'.format(window.map[map_y2][map_x1]))
-    print('x2y2: {}'.format(window.map[map_y2][map_x2]))
-    if (window.map[map_y1][map_x1] in '#=' or
-        window.map[map_y1][map_x2] in '#=' or
-        window.map[map_y2][map_x1] in '#=' or
-        window.map[map_y2][map_x2] in '#='):
-        return 'Wall'
-    for entity in entities:
-        if entity != ent:
-            [x21, y21, width2, height2] = entity.get_rect()
-            x22 = x21 + width2
-            y22 = y21 + height2
-            if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
-                return entity
-    if ent.name == 'hero':
-        if (window.map[map_y1][map_x1] == 'd' and
-            window.map[map_y1][map_x2] == 'd' and
-            window.map[map_y2][map_x1] == '.' and
-            window.map[map_y2][map_x2] == '.'):
-            return 'DoorD'
-        elif (window.map[map_y1][map_x1] == '.' and
-              window.map[map_y1][map_x2] == '.' and
-              window.map[map_y2][map_x1] == 'd' and
-              window.map[map_y2][map_x2] == 'd'):
-              return 'DoorU'
-        elif (window.map[map_y1][map_x1] == 'd' and
-              window.map[map_y1][map_x2] == '.' and
-              window.map[map_y2][map_x1] == 'd' and
-              window.map[map_y2][map_x2] == '.'):
-              return 'DoorR'
-        elif (window.map[map_y1][map_x1] == '.' and
-              window.map[map_y1][map_x2] == 'd' and
-              window.map[map_y2][map_x1] == '.' and
-              window.map[map_y2][map_x2] == 'd'):
-              return 'DoorL'
-    if (window.map[map_y1][map_x1] == 'd' or
-        window.map[map_y1][map_x2] == 'd' or
-        window.map[map_y2][map_x1] == 'd' or
-        window.map[map_y2][map_x2] == 'd'):
-        return 'Door'
-    if ent.name == 'enemy':
-        damage = 0
-        for bullet in bullets:
-            [x21, y21] = bullet.get_pos()
-            x22, y22 = x21 + 7, y21 + 7
-            if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
-                damage += bullet.dmg
-                bullets.remove(bullet)
-        if damage != 0:
-            return damage
-    return 'False'
 
 
 class Entity:
@@ -540,8 +539,10 @@ class Weapon(Item):
         super().__init__(self.name)
 
     def shoot(self, destination):
+        print(self.cooldown)
         if self.cooldown == 0:
-            self.cooldown = int(60 / self.fire_rate)
+            self.cooldown = (60 / self.fire_rate) // 1
+            print(self.cooldown)
             if self.bul_count % 2 == 1:
                 shoot_sound1.play()
                 destination[0] -= window.dx
@@ -571,7 +572,9 @@ class Weapon(Item):
                     else:
                         dx, dy = math.sin(k - math.pi/12), math.cos(k - math.pi/12)
                     bullets.append(Bullet([dx, dy], cords, self.b_speed, self.dmg))
-        else:
+
+    def cool(self):
+        if self.cooldown > 0:
             self.cooldown -= 1
 
 
@@ -720,7 +723,6 @@ while running:
                     # стрельба
                     elif type(inventory[active]) is Weapon:
                         if ammo[inventory[active].ammo] > 0:
-                            shoot_sound1.play()
                             destination = list(event.pos)
                             inventory[active].shoot(destination)
             elif event.type == pygame.MOUSEBUTTONUP:
@@ -781,6 +783,8 @@ while running:
         for j in range(len(entities) - 1):
             if entities[j].get_pos()[1] > entities[j + 1].get_pos()[1]:
                 entities[j], entities[j + 1] = entities[j + 1], entities[j]
+    for weapon in guns:
+        weapon.cool()
     if step == 5:
         sprites['hero'].update()
         step = 0
