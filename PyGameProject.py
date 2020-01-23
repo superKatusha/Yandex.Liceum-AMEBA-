@@ -54,17 +54,18 @@ def indicators():
     screen.blit(pygame.transform.scale(sprites['hp'],
                                        (30, 30)),
                 [150, 545])
-    intro_text = [str(bullets_count)]
-    font = pygame.font.Font(None, 35)
-    text_coord = [105, 578]
-    for line in intro_text:
-        string_rendered = font.render(line, 1, (255, 0, 0))
-        line_rect = string_rendered.get_rect()
-        screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
-        text_coord[1] += line_rect[3] + 30
-    screen.blit(pygame.transform.scale(sprites['bull'],
-                                       (50, 30)),
-                [140, 575])
+    if type(inventory[active]) in [Weapon, Staff]:
+        intro_text = [str(ammo[inventory[active].ammo])]
+        font = pygame.font.Font(None, 35)
+        text_coord = [105, 578]
+        for line in intro_text:
+            string_rendered = font.render(line, 1, (255, 0, 0))
+            line_rect = string_rendered.get_rect()
+            screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
+            text_coord[1] += line_rect[3] + 30
+        screen.blit(pygame.transform.scale(sprites['bull'],
+                                           (50, 30)),
+                    [140, 575])
 
 
 def draw_inventory():
@@ -117,6 +118,7 @@ class Window:
             start_screen()  # меню игры
         else:
             indicators()  # отрисовка индикаторов (хп, патроны и т.д.)
+            # отрисовка карты
             for i in range(self.room_y, self.room_y + self.room_height + 1):
                 for j in range(self.room_x, self.room_x + self.room_width + 1):
                     if self.map[i][j] == '.':
@@ -144,10 +146,11 @@ class Window:
                                                            (self.x, self.x)),
                                     [self.dx + j * self.x, self.dy + i * self.x])
             for entity in entities:
-                global gun
+                # отрисовка всех существ на карте
                 if ((self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
                         self.room_y + self.room_height > entity.y // window.block_size > self.room_y - 1) or
                         entity.name == 'hero'):
+                    # отрисовка предмета в руках героя
                     if inventory[active] != 0 and entity.name == 'hero':
                         screen.blit(pygame.transform.scale(sprites[entity.name],
                                                            (int(entity.width * self.scale),
@@ -164,6 +167,7 @@ class Window:
                                     [self.dx + entity.x, self.dy + entity.y])
 
             for bullet in bullets:
+                # отрисовка пуль
                 screen.blit(pygame.transform.scale(sprites['box'],
                                                    (int(self.bul_size * self.scale), int(self.bul_size * self.scale))),
                             [self.dx + bullet.x, self.dy + bullet.y])
@@ -173,18 +177,18 @@ class Window:
 
 
     def set_room(self, *rect):
-        # получение координат границ текущей комнаты
+        # получение координат границ текущей комнаты и расчёты координат для её отрисовки
         [self.room_x, self.room_y, self.room_width, self.room_height] = rect
-        self.x = int(self.block_size * self.scale)
         if self.block_size == 0:
             self.block_size = 35
             print(1)
         self.scale = 35 / self.block_size
+        self.x = int(self.block_size * self.scale)
         self.dy = int(- self.room_y * self.block_size + (self.height - self.room_height * self.block_size) / 3)
         self.dx = int(- self.room_x * self.block_size + (self.width - self.room_width * self.block_size) / 2)
         for i in range(self.room_y, self.room_y + self.room_height + 1):
             print(self.map[i][self.room_x: self.room_x + self.room_width + 1])
-        print(self.room_x, self.room_y, self.room_width, self.room_height, self.dx, self.dy,self.scale)
+        print(self.room_x, self.room_y, self.room_width, self.room_height, self.dx, self.dy, self.scale)
 
 
 def collision(ent, x, y):
@@ -349,7 +353,6 @@ class Hero(Entity):
                 break
         print([self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y])
         window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y)
-        print(1)
 
     def room_upd(self, key):
         if key == 'D':
@@ -490,12 +493,13 @@ class Item:
 
 
 class Weapon(Item):
-    def __init__(self, b_speed, dmg, magazin, fire_rate, name):
+    def __init__(self, b_speed, dmg, magazin, fire_rate, name, ammo):
         self.b_speed = b_speed
         self.dmg = dmg
         self.magazin = magazin
         self.fire_rate = fire_rate
         self.name = name
+        self.ammo = ammo
         super().__init__(self.name)
 
 
@@ -507,9 +511,10 @@ class Staff(Item):
 pygame.init()
 a = ''
 FPS = 60
-guns = [Weapon(2, 25, 25, 3, 'pistol'),
-        Weapon(3, 40, 30, 5, 'auto'),
-        Weapon(6, 100, 5, 0.5, 'snipe')]
+guns = [Weapon(2, 25, 25, 3, 'pistol', '9mm'),
+        Weapon(3, 40, 30, 5, 'auto', '5.56mm'),
+        Weapon(6, 100, 5, 0.5, 'snipe', '7.62mm')]
+ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10}
 active = 0
 hp = 100
 size = width, height = 550, 650
@@ -635,29 +640,28 @@ while running:
                                     grab_item = inventory[y * 3 + x]
                                     inventory[y * 3 + x] = 0
                                     print('grab {} {}'.format(y, x), grab_item)
-                    else:
-                        shoot_sound1.play()
-                        speed = 4
-                        destination = list(event.pos)
-                        destination[0] -= window.dx
-                        destination[1] -= window.dy
-                        cords = [hero.get_pos()[0] + hero.width // 2,
-                                 hero.get_pos()[1] + hero.height // 2]
-                        dx = destination[0] - cords[0]
-                        dy = destination[1] - cords[1]
-                        if dy != 0 and dx != 0:
-                            k = math.atan(dx / dy)
-                            if destination[1] - cords[1] < 0:
-                                dx, dy = -math.sin(k), -math.cos(k)
-                            else:
-                                dx, dy = math.sin(k), math.cos(k)
-                        elif dx == 0:
-                            dx, dy = 0, 1
-                        elif dy == 0:
-                            dx, dy = 1, 0
-                        if bullets_count > 0:
-                            bullets_count -= 1
-                        bullets.append(Bullet([dx, dy], cords, guns[active].b_speed, guns[active].dmg))
+                    elif type(inventory[active]) is Weapon:
+                        if ammo[inventory[active].ammo] > 0:
+                            shoot_sound1.play()
+                            destination = list(event.pos)
+                            destination[0] -= window.dx
+                            destination[1] -= window.dy
+                            cords = [hero.get_pos()[0] + hero.width // 2,
+                                     hero.get_pos()[1] + hero.height // 2]
+                            dx = destination[0] - cords[0]
+                            dy = destination[1] - cords[1]
+                            if dy != 0 and dx != 0:
+                                k = math.atan(dx / dy)
+                                if destination[1] - cords[1] < 0:
+                                    dx, dy = -math.sin(k), -math.cos(k)
+                                else:
+                                    dx, dy = math.sin(k), math.cos(k)
+                            elif dx == 0:
+                                dx, dy = 0, 1
+                            elif dy == 0:
+                                dx, dy = 1, 0
+                            ammo[inventory[active].ammo] -= 1
+                            bullets.append(Bullet([dx, dy], cords, guns[active].b_speed, guns[active].dmg))
             elif event.type == pygame.MOUSEBUTTONUP:
                 if grab:
                     grab = False
