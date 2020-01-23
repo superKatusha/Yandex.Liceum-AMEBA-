@@ -97,7 +97,7 @@ class Window:
         self.map = []
         self.map_size = []
         self.block_size, self.old_block_size, self.scale = 0, 0, 0
-        self.bul_size = 10
+        self.bul_size = 7
         self.room_x, self.room_y, self.room_width, self.room_height = 0, 0, 0, 0
         self.dx, self.dy = 0, 0
 
@@ -168,7 +168,7 @@ class Window:
 
             for bullet in bullets:
                 # отрисовка пуль
-                screen.blit(pygame.transform.scale(sprites['box'],
+                screen.blit(pygame.transform.scale(sprites['bullet'],
                                                    (int(self.bul_size * self.scale), int(self.bul_size * self.scale))),
                             [self.dx + bullet.x, self.dy + bullet.y])
             if inventory_open:
@@ -504,8 +504,9 @@ class Weapon(Item):
 
 
 class Staff(Item):
-    def __init__(self):
-        pass
+    def __init__(self, name, ammo):
+        self.name = name
+        self.ammo = ammo
 
 
 pygame.init()
@@ -513,8 +514,9 @@ a = ''
 FPS = 60
 guns = [Weapon(2, 25, 25, 3, 'pistol', '9mm'),
         Weapon(3, 40, 30, 5, 'auto', '5.56mm'),
-        Weapon(6, 100, 5, 0.5, 'snipe', '7.62mm')]
-ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10}
+        Weapon(6, 100, 5, 0.5, 'snipe', '7.62mm'),
+        Weapon(3, 30, 5, 0.5, 'shotgun', '12mm')]
+ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10, '12mm': 10}
 active = 0
 hp = 100
 size = width, height = 550, 650
@@ -522,10 +524,10 @@ sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'box': load_image('box.png'), 'trader': load_image('trader.png'),
            'black': load_image('black.jpg'), 'enemy': load_image('skin1.png'),
            'water': load_image('water.png'), 'hp': load_image('hp.png'),
-           'bull': load_image('bullet.png'), 'open_door': load_image('open_door.png'),
+           'bull': load_image('bullet-i.png'), 'open_door': load_image('open_door.png'),
            'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory.png'),
            'pistol': load_image('pistol.png'), 'auto': load_image('auto.png'),
-           'snipe': load_image('snipe.png')}
+           'snipe': load_image('snipe.png'), 'bullet': load_image('bullet.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
