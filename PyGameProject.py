@@ -441,6 +441,20 @@ class Hero(Entity):
                 self.room_y1 = y
                 break
         print([self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y])
+        if ([window.room_x, window.room_y, window.room_width, window.room_height] !=
+                [self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y]):
+            if key == 'U':
+                self.y -= window.block_size
+                super().move(0, -window.block_size)
+            elif key == 'D':
+                self.y += window.block_size
+                super().move(0, window.block_size)
+            elif key == 'R':
+                self.x += window.block_size
+                super().move(window.block_size, 0)
+            elif key == 'D':
+                self.x -= window.block_size
+                super().move(-window.block_size, 0)
         window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y)
 
     def redraw(self):
