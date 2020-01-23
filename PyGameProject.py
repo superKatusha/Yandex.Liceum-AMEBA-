@@ -615,6 +615,7 @@ while running:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if inventory_open:
+                        # перетаскивание предметов в инвентаре
                         if not grab:
                             x = -1
                             y = -1
@@ -640,6 +641,7 @@ while running:
                                     grab_item = inventory[y * 3 + x]
                                     inventory[y * 3 + x] = 0
                                     print('grab {} {}'.format(y, x), grab_item)
+                    # стрельба
                     elif type(inventory[active]) is Weapon:
                         if ammo[inventory[active].ammo] > 0:
                             shoot_sound1.play()
@@ -661,8 +663,9 @@ while running:
                             elif dy == 0:
                                 dx, dy = 1, 0
                             ammo[inventory[active].ammo] -= 1
-                            bullets.append(Bullet([dx, dy], cords, guns[active].b_speed, guns[active].dmg))
+                            bullets.append(Bullet([dx, dy], cords, inventory[active].b_speed, inventory[active].dmg))
             elif event.type == pygame.MOUSEBUTTONUP:
+                # перетаскивание предметов в инвентаре
                 if grab:
                     grab = False
                     cords = list(event.pos)
@@ -690,6 +693,7 @@ while running:
                             grab_item = 0
                     else:
                         inventory[grab_from], inventory[y * 3 + x] = inventory[y * 3 + x], grab_item
+    # движение героя
     if move_left:
         channel1.play(move_sound1)
         hero.move(-2, 0)
