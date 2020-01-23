@@ -152,10 +152,10 @@ def collision(ent, x, y):
                 window.map[map_y2][map_x1] == '.' and
                 window.map[map_y2][map_x2] == 'd'):
             return ['DoorL']
-    if (window.map[map_y1][map_x1] == 'd' or
-            window.map[map_y1][map_x2] == 'd' or
-            window.map[map_y2][map_x1] == 'd' or
-            window.map[map_y2][map_x2] == 'd'):
+    if (window.map[map_y1][map_x1] == 'D' or
+            window.map[map_y1][map_x2] == 'D' or
+            window.map[map_y2][map_x1] == 'D' or
+            window.map[map_y2][map_x2] == 'D'):
         return ['Door', damage]
     return ['False', damage]
 
@@ -223,15 +223,17 @@ class Window:
                         screen.blit(pygame.transform.scale(sprites['grass'],
                                                            (self.x, self.x)),
                                     [self.dx + j * self.x, self.dy + i * self.x])
-                    elif self.map[i][j] == 'd':
+                    elif self.map[i][j] in 'dD':
                         screen.blit(pygame.transform.scale(sprites['grass'],
                                                            (self.x, self.x)),
                                     [self.dx + j * self.x, self.dy + i * self.x])
                         if len(en) == 0:
+                            self.map[i][j] = 'd'
                             screen.blit(pygame.transform.scale(sprites['open_door'],
                                                                (self.x, self.x)),
                                         [self.dx + j * self.x, self.dy + i * self.x])
                         else:
+                            self.map[i][j] = 'D'
                             screen.blit(pygame.transform.scale(sprites['closed_door'],
                                                                (self.x, self.x)),
                                         [self.dx + j * self.x, self.dy + i * self.x])
@@ -349,7 +351,7 @@ class Hero(Entity):
         col = collision(self, dx, dy)
         print(col)
         # перемещение героя
-        if col[0] in ['False', 'Door', 'DoorU', 'DoorD', 'DoorR', 'DoorL']:
+        if col[0] in ['False', 'DoorU', 'DoorD', 'DoorR', 'DoorL']:
             self.x += dx
             self.y += dy
         else:
@@ -381,19 +383,19 @@ class Hero(Entity):
 
     def room_init(self, i, j):
         for x in range(j, -1, -1):
-            if window.map[i][x] in 'd0=':
+            if window.map[i][x] in 'dD0=':
                 self.room_x = x
                 break
         for y in range(i, -1, -1):
-            if window.map[y][j] in 'd0=':
+            if window.map[y][j] in 'dD0=':
                 self.room_y = y
                 break
         for x in range(j, j + 100):
-            if window.map[i][x] in 'd0=':
+            if window.map[i][x] in 'dD0=':
                 self.room_x1 = x
                 break
         for y in range(i, i + 100):
-            if window.map[y][j] in 'd0=':
+            if window.map[y][j] in 'dD0=':
                 self.room_y1 = y
                 break
         print([self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y])
@@ -403,39 +405,39 @@ class Hero(Entity):
         if key == 'D':
             self.room_y = self.y // window.block_size
             for x in range(self.x // window.block_size, -1, -1):
-                if window.map[self.room_y + 1][x] in 'd0=':
+                if window.map[self.room_y + 1][x] in 'dD0=':
                     self.room_x = x
                     break
         elif key == 'U':
             for y in range(self.y // window.block_size - 1, -1, -1):
-                if window.map[y][self.x // window.block_size] in 'd0=':
+                if window.map[y][self.x // window.block_size] in 'dD0=':
                     self.room_y = y
                     break
             for x in range(self.x // window.block_size, -1, -1):
-                if window.map[self.room_y + 1][x] in 'd0=':
+                if window.map[self.room_y + 1][x] in 'dD0=':
                     self.room_x = x
                     break
         elif key == 'R':
             self.room_x = self.x // window.block_size
             for y in range(self.y // window.block_size, -1, -1):
-                if window.map[y][self.room_x + 1] in 'd0=':
+                if window.map[y][self.room_x + 1] in 'dD0=':
                     self.room_y = y
                     break
         elif key == 'L':
             for x in range(self.x // window.block_size - 1, -1, -1):
-                if window.map[self.y // window.block_size][x] in 'd0=':
+                if window.map[self.y // window.block_size][x] in 'dD0=':
                     self.room_x = x
                     break
             for y in range(self.y // window.block_size, -1, -1):
-                if window.map[y][self.room_x + 1] in 'd0=':
+                if window.map[y][self.room_x + 1] in 'dD0=':
                     self.room_y = y
                     break
         for x in range(self.room_x + 1, self.room_x + 100):
-            if window.map[self.room_y + 1][x] in 'd0=':
+            if window.map[self.room_y + 1][x] in 'dD0=':
                 self.room_x1 = x
                 break
         for y in range(self.room_y + 1, self.room_y + 100):
-            if window.map[y][self.room_x + 1] in 'd0=':
+            if window.map[y][self.room_x + 1] in 'dD0=':
                 self.room_y1 = y
                 break
         print([self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y])
@@ -489,8 +491,7 @@ class Enemy(Entity):
         # print(self.width, self.height, 'Enemy')
         self.x = x
         self.y = y
-        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height],
-                         'enemy')
+        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], 'enemy')
 
     def move(self):
         destination = hero.get_pos()
@@ -609,7 +610,7 @@ sprites = {'grass': load_image('grass.png'), 'hero': AnimatedSprite(load_image('
            'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory.png'),
            'pistol': load_image('pistol.png'), 'auto': load_image('auto.png'),
            'snipe': load_image('snipe.png'), 'bullet': load_image('bullet.png'),
-           'shotgun': load_image('shotgun.png')}
+           'shotgun': load_image('shotgun.png'), 'chest_inventory': load_image('chest_inventory.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
