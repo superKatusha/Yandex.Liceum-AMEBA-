@@ -99,10 +99,10 @@ def collision(ent, x, y):
     map_x2 = int(x2 // window.block_size)
     map_y1 = int(y1 // window.block_size)
     map_y2 = int(y2 // window.block_size)
-    print('x1y1: {}'.format(window.map[map_y1][map_x1]))
-    print('x2y1: {}'.format(window.map[map_y1][map_x2]))
-    print('x1y2: {}'.format(window.map[map_y2][map_x1]))
-    print('x2y2: {}'.format(window.map[map_y2][map_x2]))
+    # print('x1y1: {}'.format(window.map[map_y1][map_x1]))
+    # print('x2y1: {}'.format(window.map[map_y1][map_x2]))
+    # print('x1y2: {}'.format(window.map[map_y2][map_x1]))
+    # print('x2y2: {}'.format(window.map[map_y2][map_x2]))
     if (window.map[map_y1][map_x1] in '#=' or
         window.map[map_y1][map_x2] in '#=' or
         window.map[map_y2][map_x1] in '#=' or
@@ -211,6 +211,11 @@ class Window:
             start_screen()  # меню игры
         else:
             indicators()  # отрисовка индикаторов (хп, патроны и т.д.)
+            for entity in entities:
+                if (self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
+                        self.room_y + self.room_height > entity.y // window.block_size > self.room_y - 1 and
+                        entity.name == 'enemy'):
+                    enemies.append(enemy)
             # отрисовка карты
             for i in range(self.room_y, self.room_y + self.room_height + 1):
                 for j in range(self.room_x, self.room_x + self.room_width + 1):
@@ -507,7 +512,7 @@ class Enemy(Entity):
             self.y += dy
         else:
             print(col)
-            if col is int:
+            if type(col) is int:
                 self.hp -= col
                 damaged_sound1.play()
             dx = 0
