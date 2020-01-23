@@ -127,9 +127,13 @@ def collision(ent, x, y):
             x22 = x21 + width2
             y22 = y21 + height2
             if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
+                    (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
+                    (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
+                    (x2 >= x22 >= x1 and y2 >= y22 >= y1) or
+                    (x22 >= x1 >= x21 and y22 >= y1 >= y21) or
+                    (x22 >= x2 >= x21 and y22 >= y2 >= y21) or
+                    (x22 >= x1 >= x21 and y22 >= y2 >= y21) or
+                    (x22 >= x2 >= x21 and y22 >= y1 >= y21)):
                 return [entity.name, damage]
     if ent.name == 'hero':
         if (window.map[map_y1][map_x1] == 'd' and
@@ -243,6 +247,13 @@ class Window:
                                     [self.dx + j * self.x, self.dy + i * self.x])
                     elif self.map[i][j] in '#=':
                         screen.blit(pygame.transform.scale(sprites['box'],
+                                                           (self.x, self.x)),
+                                    [self.dx + j * self.x, self.dy + i * self.x])
+                    elif self.map[i][j] in 'c':
+                        screen.blit(pygame.transform.scale(sprites['grass'],
+                                                           (self.x, self.x)),
+                                    [self.dx + j * self.x, self.dy + i * self.x])
+                        screen.blit(pygame.transform.scale(sprites['chest'],
                                                            (self.x, self.x)),
                                     [self.dx + j * self.x, self.dy + i * self.x])
             for entity in entities:
@@ -452,7 +463,7 @@ class Hero(Entity):
             elif key == 'R':
                 self.x += window.block_size
                 super().move(window.block_size, 0)
-            elif key == 'D':
+            elif key == 'L':
                 self.x -= window.block_size
                 super().move(-window.block_size, 0)
         window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y)
@@ -522,6 +533,8 @@ class Enemy(Entity):
         elif dy == 0 and dx > 0:
             dx, dy = 1, 0
         col = collision(self, dx, dy)
+        if col[0] == 'hero':
+            print(col)
         if col[0] == 'False':
             self.x += dx
             self.y += dy
@@ -604,27 +617,33 @@ class Staff(Item):
         self.ammo = ammo
 
 
+class Chest:
+    def __init__(self):
+        pass
+
+
 pygame.init()
 a = ''
 FPS = 60
 guns = [Weapon(2, 25, 25, 3, 'pistol', '9mm'),
         Weapon(3, 40, 30, 5, 'auto', '5.56mm'),
-        Weapon(6, 100, 5, 0.5, 'snipe', '7.62mm'),
-        Weapon(3, 30, 5, 0.5, 'shotgun', '12mm', 3)]
+        Weapon(6, 100, 5, 0.7, 'snipe', '7.62mm'),
+        Weapon(3, 30, 5, 1, 'shotgun', '12mm', 3)]
 ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10, '12mm': 10}
 active = 0
 hp = 100
 step = 0
 size = width, height = 550, 650
 sprites = {'grass': load_image('grass.png'), 'hero': AnimatedSprite(load_image('skin2-gif.png'), 10, 2, 477, 699),
-           'box': load_image('box.png'), 'trader': load_image('trader.png'),
+           'box': load_image('box (2).png'), 'trader': load_image('trader.png'),
            'black': load_image('black.jpg'), 'enemy': AnimatedSprite(load_image('skin1-gif.png'), 10, 2, 479, 654),
            'water': load_image('water.png'), 'hp': load_image('hp.png'),
            'bull': load_image('bullet-i.png'), 'open_door': load_image('open_door.png'),
-           'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory.png'),
+           'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory1.png'),
            'pistol': load_image('pistol.png'), 'auto': load_image('auto.png'),
            'snipe': load_image('snipe.png'), 'bullet': load_image('bullet.png'),
-           'shotgun': load_image('shotgun.png'), 'chest_inventory': load_image('chest_inventory.png')}
+           'shotgun': load_image('shotgun.png'), 'chest_inventory': load_image('chest_inventory.png'),
+           'chest': load_image('chest.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
