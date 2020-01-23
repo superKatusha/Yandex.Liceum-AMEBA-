@@ -67,6 +67,27 @@ def indicators():
                 [140, 575])
 
 
+def draw_inventory():
+    screen.blit(pygame.transform.scale(sprites['inventory'],
+                                       (150, 650)),
+                [400, 0])
+    for i in range(len(inventory)):
+        if inventory[i] != 0:
+            name = inventory[i].name
+            if i < 3:
+                screen.blit(pygame.transform.scale(sprites[name], (37, 37)),
+                            [409 + 46 * i, 207])
+            else:
+                y = 10 + 44 * ((i - 3) // 3)
+                x = 409 + 47 * (i % 3)
+                screen.blit(pygame.transform.scale(sprites[inventory[i].name], (37, 37)),
+                            [x, y])
+    if grab:
+        cords = pygame.mouse.get_pos()
+        screen.blit(pygame.transform.scale(sprites[grab_item.name], (37, 37)),
+                    [cords[0] + dx, cords[1] + dy])
+
+
 class Window:
     def __init__(self, size):
         global entities
@@ -127,17 +148,15 @@ class Window:
                 if ((self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
                         self.room_y + self.room_height > entity.y // window.block_size > self.room_y - 1) or
                         entity.name == 'hero'):
-                    if entity.name == 'hero' or entity.name == 'hero_ar-15' or entity.name == 'hero_AWP' or entity.name == 'hero_usp':
-                        if gun == 'pistol':
-                            name = 'hero_usp'
-                        elif gun == 'AR-15':
-                            name = 'hero_ar-15'
-                        else:
-                            name = 'hero_AWP'
-                        screen.blit(pygame.transform.scale(sprites[name],
+                    if inventory[active] != 0 and entity.name == 'hero':
+                        screen.blit(pygame.transform.scale(sprites[entity.name],
                                                            (int(entity.width * self.scale),
                                                             int(entity.height * self.scale))),
                                     [self.dx + entity.x, self.dy + entity.y])
+                        screen.blit(pygame.transform.scale(sprites[inventory[active].name],
+                                                           (int(entity.height * self.scale * 0.85),
+                                                            int(entity.height * self.scale * 0.85))),
+                                    [self.dx + entity.x, self.dy + entity.y + 10])
                     else:
                         screen.blit(pygame.transform.scale(sprites[entity.name],
                                                            (int(entity.width * self.scale),
@@ -148,27 +167,21 @@ class Window:
                 screen.blit(pygame.transform.scale(sprites['box'],
                                                    (int(self.bul_size * self.scale), int(self.bul_size * self.scale))),
                             [self.dx + bullet.x, self.dy + bullet.y])
-            if inventory:
-                screen.blit(pygame.transform.scale(sprites['inventory'],
-                                                   (150, 650)),
-                            [400, 0])
+            if inventory_open:
+                # отрисовка инвенторя
+                draw_inventory()
+
 
     def set_room(self, *rect):
         # получение координат границ текущей комнаты
         [self.room_x, self.room_y, self.room_width, self.room_height] = rect
         self.x = int(self.block_size * self.scale)
-        # self.old_block_size = self.block_size
-        a = min(self.width, self.height) // max(13 + 1, 12 + 1)
         if self.block_size == 0:
             self.block_size = 35
             print(1)
         self.scale = 35 / self.block_size
         self.dy = int(- self.room_y * self.block_size + (self.height - self.room_height * self.block_size) / 3)
         self.dx = int(- self.room_x * self.block_size + (self.width - self.room_width * self.block_size) / 2)
-        # if self.room_width >=  self.dy = (self.room_width - self.room_height) * self.x // 2 - self.room_y * self.x
-        # elif self.room_width <= self.room_height:self.room_height:
-        #         #
-        # self.dx = (self.room_height - self.room_width) * self.x // 2 - self.room_x * self.x
         for i in range(self.room_y, self.room_y + self.room_height + 1):
             print(self.map[i][self.room_x: self.room_x + self.room_width + 1])
         print(self.room_x, self.room_y, self.room_width, self.room_height, self.dx, self.dy,self.scale)
@@ -278,7 +291,7 @@ class Hero(Entity):
         self.height = int(round(1 * window.block_size))
         self.x = j * window.block_size + window.block_size - self.width // 2
         self.y = i * window.block_size
-        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], 'hero')
+        super().__init__([self.x, self.y + 0.5 * self.height, self.width, 0.5 * self.height], 'hero')
 
     def move(self, x, y):
         print(self.x, self.y)
@@ -483,9 +496,10 @@ class Weapon(Item):
         self.magazin = magazin
         self.fire_rate = fire_rate
         self.name = name
+        super().__init__(self.name)
 
 
-class Staff:
+class Staff(Item):
     def __init__(self):
         pass
 
@@ -493,12 +507,10 @@ class Staff:
 pygame.init()
 a = ''
 FPS = 60
-guns = ['pistol', 'AR-15', 'AWP', 'AK-47', 'M249']
-ammo_1 = 40
-ammo_2 = 250
-ammo_3 = 30
-position = 0
-gun = guns[position]
+guns = [Weapon(2, 25, 25, 3, 'pistol'),
+        Weapon(3, 40, 30, 5, 'auto'),
+        Weapon(6, 100, 5, 0.5, 'snipe')]
+active = 0
 hp = 100
 size = width, height = 550, 650
 sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
@@ -507,8 +519,8 @@ sprites = {'grass': load_image('grass.png'), 'hero': load_image('skin2.png'),
            'water': load_image('water.png'), 'hp': load_image('hp.png'),
            'bull': load_image('bullet.png'), 'open_door': load_image('open_door.png'),
            'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory.png'),
-           'hero_usp': load_image('Skin_USP.png'), 'hero_ar-15': load_image('Skin_AR-15.png'),
-           'hero_AWP': load_image('Skin_AWP.png')}
+           'pistol': load_image('pistol.png'), 'auto': load_image('auto.png'),
+           'snipe': load_image('snipe.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
@@ -516,15 +528,19 @@ shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
 damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
 move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
 bullets = []
-bullets_count = ammo_1
+bullets_count = guns[active].magazin
 enemies = []
 traders = []
 entities = []
+inventory = [guns[0], guns[1], guns[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+x, y = 0, 0
+grab_from, grab_item = 0, 0
 screen = pygame.display.set_mode(size)
 window = Window(size)
 running = True
 menu = True
-inventory = False
+grab = False
+inventory_open = False
 move_left, move_right, move_up, move_down = False, False, False, False
 clock = pygame.time.Clock()
 while running:
@@ -569,19 +585,16 @@ while running:
                 elif event.key == pygame.K_s:
                     move_down = True
                 elif event.key == pygame.K_i:
-                    inventory = not inventory
+                    inventory_open = not inventory_open
                 elif event.key == pygame.K_1:
-                    position = 0
-                    gun = guns[0]
-                    bullets_count = ammo_1
+                    active = 0
+                    bullets_count = guns[active].magazin
                 elif event.key == pygame.K_2:
-                    position = 1
-                    gun = guns[1]
-                    bullets_count = ammo_2
+                    active = 1
+                    bullets_count = guns[active].magazin
                 elif event.key == pygame.K_3:
-                    position = 2
-                    gun = guns[2]
-                    bullets_count = ammo_3
+                    active = 2
+                    bullets_count = guns[active].magazin
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
                     move_left = False
@@ -596,17 +609,33 @@ while running:
                     move_down = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    ranger = 0
-                    if gun == 'pistol':
-                        ammo_1 -= 1
-                        ranger = 1
-                    elif gun == 'AR-15':
-                        ammo_2 -= 1
-                        ranger = 1
-                    elif gun == 'AWP':
-                        ammo_3 -= 1
-                        ranger = 1
-                    for i in range(ranger):
+                    if inventory_open:
+                        if not grab:
+                            x = -1
+                            y = -1
+                            cords = list(event.pos)
+                            if 208 < cords[1] < 245:
+                                y = 0
+                                dy = 208 - cords[1]
+                            else:
+                                for i in range(4):
+                                    if 10 + 44 * i < cords[1] < 47 + 44 * i:
+                                        y = i + 1
+                                        dy = 10 + 44 * i - cords[1]
+                                        break
+                            for i in range(3):
+                                if 409 + 47 * i < cords[0] < 446 + 47 * i:
+                                    x = i
+                                    dx = 409 + 47 * i - cords[0]
+                                    break
+                            if x != -1 and y != -1:
+                                if inventory[y * 3 + x] != 0:
+                                    grab = True
+                                    grab_from = y * 3 + x
+                                    grab_item = inventory[y * 3 + x]
+                                    inventory[y * 3 + x] = 0
+                                    print('grab {} {}'.format(y, x), grab_item)
+                    else:
                         shoot_sound1.play()
                         speed = 4
                         destination = list(event.pos)
@@ -628,12 +657,35 @@ while running:
                             dx, dy = 1, 0
                         if bullets_count > 0:
                             bullets_count -= 1
-                            if gun == 'AWP':
-                                bullets.append(Bullet([dx, dy], cords, speed + speed, 80))
-                            elif gun == 'AR-15':
-                                bullets.append(Bullet([dx, dy], cords, speed + 2, 25))
-                            else:
-                                bullets.append(Bullet([dx, dy], cords, speed, 15))
+                        bullets.append(Bullet([dx, dy], cords, guns[active].b_speed, guns[active].dmg))
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if grab:
+                    grab = False
+                    cords = list(event.pos)
+                    x = -1
+                    y = -1
+                    if 208 < cords[1] < 245:
+                        y = 0
+                        dy = 208 - cords[1]
+                    else:
+                        for i in range(4):
+                            if 10 + 44 * i < cords[1] < 47 + 44 * i:
+                                y = i + 1
+                                dy = 10 + 44 * i - cords[1]
+                                break
+                    for i in range(3):
+                        if 409 + 47 * i < cords[0] < 446 + 47 * i:
+                            x = i
+                            dx = 409 + 47 * i - cords[0]
+                            break
+                    if x == -1 or y == -1:
+                        if x < 400:
+                            grab_from = 0
+                        else:
+                            inventory[grab_from] = grab_item
+                            grab_item = 0
+                    else:
+                        inventory[grab_from], inventory[y * 3 + x] = inventory[y * 3 + x], grab_item
     if move_left:
         channel1.play(move_sound1)
         hero.move(-2, 0)
