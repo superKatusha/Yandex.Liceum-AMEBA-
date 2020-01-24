@@ -74,14 +74,24 @@ def draw_inventory():
                 [400, 0])
     for i in range(len(inventory)):
         if inventory[i] != 0:
-            name = inventory[i].name
             if i < 3:
-                screen.blit(pygame.transform.scale(sprites[name], (37, 37)),
+                screen.blit(pygame.transform.scale(sprites[inventory[i].name], (37, 37)),
                             [409 + 46 * i, 207])
             else:
                 y = 10 + 44 * ((i - 3) // 3)
                 x = 409 + 47 * (i % 3)
                 screen.blit(pygame.transform.scale(sprites[inventory[i].name], (37, 37)),
+                            [x, y])
+    if chest_open:
+        print(chest_active)
+        print(chests)
+        chest = chests[chest_active]
+        screen.blit(sprites['chest_inventory'], [200, 250])
+        for i in range(len(chest.inventory)):
+            if chest.inventory[i] != 0:
+                y = 260 + 44 * (i // 3)
+                x = 209 + 47 * (i % 3)
+                screen.blit(pygame.transform.scale(sprites[chest.inventory[i].name], (37, 37)),
                             [x, y])
     if grab:
         cords = pygame.mouse.get_pos()
@@ -210,7 +220,6 @@ class Window:
                 self.map.append(list(a[i].rstrip().ljust(self.map_size[0], '.')))
 
     def render(self):
-        global hp, bullets_count
         if menu:
             start_screen()  # меню игры
         else:
@@ -618,8 +627,22 @@ class Staff(Item):
 
 
 class Chest:
-    def __init__(self):
-        pass
+    def __init__(self, type):
+        self.type = type
+        self.inventory = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.fill()
+
+    def fill(self):
+        for i in range(len(self.inventory)):
+            luck = random.randint(1, 100)
+            prs = 0
+            for loot in chest_types[self.type]:
+                print(luck, loot[1] + prs)
+                if luck <= loot[1] + prs:
+                    self.inventory[i] = loot[0]
+                    break
+                prs += loot[1]
+        print(self.inventory)
 
 
 pygame.init()
@@ -650,8 +673,10 @@ channel3 = pygame.mixer.Channel(2)
 shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
 damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
 move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
+chest_types = {'starter': [[guns[0], 25], [guns[1], 10], [guns[2], 2], [guns[3], 2]]}
+chests = {'16 4': Chest('starter')}
+chest_active = ''
 bullets = []
-bullets_count = guns[active].magazin
 enemies = []
 traders = []
 entities = []
@@ -664,6 +689,7 @@ running = True
 menu = True
 grab = False
 inventory_open = False
+chest_open = False
 move_left, move_right, move_up, move_down = False, False, False, False
 clock = pygame.time.Clock()
 while running:
@@ -709,6 +735,7 @@ while running:
                     move_down = True
                 elif event.key == pygame.K_i:
                     inventory_open = not inventory_open
+                    chest_open = False
                 elif event.key == pygame.K_1:
                     active = 0
                     bullets_count = guns[active].magazin
@@ -732,38 +759,71 @@ while running:
                     move_down = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
+                    cords = list(event.pos)
+                    map_x = (cords[0] - window.dx) // window.block_size
+                    map_y = (cords[1] - window.dy) // window.block_size
                     if inventory_open:
                         # перетаскивание предметов в инвентаре
                         if not grab:
                             x = -1
                             y = -1
-                            cords = list(event.pos)
-                            if 208 < cords[1] < 245:
-                                y = 0
-                                dy = 208 - cords[1]
+                            ch = 0
+                            if cords[1] < 245:
+                                if 208 < cords[1] < 245:
+                                    y = 0
+                                    dy = 208 - cords[1]
+                                else:
+                                    for i in range(4):
+                                        if 10 + 44 * i < cords[1] < 47 + 44 * i:
+                                            y = i + 1
+                                            dy = 10 + 44 * i - cords[1]
+                                            break
                             else:
-                                for i in range(4):
-                                    if 10 + 44 * i < cords[1] < 47 + 44 * i:
-                                        y = i + 1
-                                        dy = 10 + 44 * i - cords[1]
+                                ch = 1
+                                for i in range(3):
+                                    if 260 + 44 * i < cords[1] < 297 + 44 * i:
+                                        y = i
+                                        dy = 260 + 44 * i - cords[1]
                                         break
-                            for i in range(3):
-                                if 409 + 47 * i < cords[0] < 446 + 47 * i:
-                                    x = i
-                                    dx = 409 + 47 * i - cords[0]
-                                    break
+                            if cords[0] > 400:
+                                for i in range(3):
+                                    if 409 + 47 * i < cords[0] < 446 + 47 * i:
+                                        x = i
+                                        dx = 409 + 47 * i - cords[0]
+                                        break
+                            else:
+                                ch = 1
+                                for i in range(3):
+                                    if 209 + 47 * i < cords[0] < 246 + 47 * i:
+                                        x = i
+                                        dx = 209 + 47 * i - cords[0]
+                                        break
                             if x != -1 and y != -1:
-                                if inventory[y * 3 + x] != 0:
-                                    grab = True
-                                    grab_from = y * 3 + x
-                                    grab_item = inventory[y * 3 + x]
-                                    inventory[y * 3 + x] = 0
-                                    print('grab {} {}'.format(y, x), grab_item)
+                                if ch == 0:
+                                    if inventory[y * 3 + x] != 0:
+                                        grab = True
+                                        grab_from = [y * 3 + x, 'in']
+                                        grab_item = inventory[y * 3 + x]
+                                        inventory[y * 3 + x] = 0
+                                        print('grab {} {}'.format(y, x), grab_item)
+                                else:
+                                    chest = chests[chest_active]
+                                    if chest.inventory[y * 3 + x] != 0:
+                                        grab = True
+                                        grab_from = [y * 3 + x, 'ch']
+                                        grab_item = chest.inventory[y * 3 + x]
+                                        chest.inventory[y * 3 + x] = 0
+                                        print('grab {} {}'.format(y, x), grab_item)
+                    elif window.map[map_y][map_x] == 'c':
+                        if (abs(hero.x // window.block_size - map_x) < 3 and
+                                abs(hero.y // window.block_size - map_y) < 3):
+                            inventory_open = True
+                            chest_open = True
+                            chest_active = '{} {}'.format(map_x, map_y)
                     # стрельба
                     elif type(inventory[active]) is Weapon:
                         if ammo[inventory[active].ammo] > 0:
-                            destination = list(event.pos)
-                            inventory[active].shoot(destination)
+                            inventory[active].shoot(cords)
             elif event.type == pygame.MOUSEBUTTONUP:
                 # перетаскивание предметов в инвентаре
                 if grab:
@@ -771,28 +831,58 @@ while running:
                     cords = list(event.pos)
                     x = -1
                     y = -1
-                    if 208 < cords[1] < 245:
-                        y = 0
-                        dy = 208 - cords[1]
-                    else:
-                        for i in range(4):
-                            if 10 + 44 * i < cords[1] < 47 + 44 * i:
-                                y = i + 1
-                                dy = 10 + 44 * i - cords[1]
-                                break
-                    for i in range(3):
-                        if 409 + 47 * i < cords[0] < 446 + 47 * i:
-                            x = i
-                            dx = 409 + 47 * i - cords[0]
-                            break
-                    if x == -1 or y == -1:
-                        if x < 400:
-                            grab_from = 0
+                    ch = 0
+                    if cords[1] < 245:
+                        if 208 < cords[1] < 245:
+                            y = 0
+                            dy = 208 - cords[1]
                         else:
-                            inventory[grab_from] = grab_item
-                            grab_item = 0
+                            for i in range(4):
+                                if 10 + 44 * i < cords[1] < 47 + 44 * i:
+                                    y = i + 1
+                                    dy = 10 + 44 * i - cords[1]
+                                    break
                     else:
-                        inventory[grab_from], inventory[y * 3 + x] = inventory[y * 3 + x], grab_item
+                        ch = 1
+                        for i in range(3):
+                            if 260 + 44 * i < cords[1] < 297 + 44 * i:
+                                y = i
+                                dy = 260 + 44 * i - cords[1]
+                                break
+                    if cords[0] > 400:
+                        for i in range(3):
+                            if 409 + 47 * i < cords[0] < 446 + 47 * i:
+                                x = i
+                                dx = 409 + 47 * i - cords[0]
+                                break
+                    else:
+                        ch = 1
+                        for i in range(3):
+                            if 209 + 47 * i < cords[0] < 246 + 47 * i:
+                                x = i
+                                dx = 209 + 47 * i - cords[0]
+                                break
+                    if x == -1 or y == -1:
+                        if 350 > x > 200 and 400 > y > 250 or x > 400:
+                            if grab_from[1] == 'in':
+                                inventory[grab_from[0]] = grab_item
+                            else:
+                                chests[chest_active].inventory[grab_from[0]] = grab_item
+                            grab_item = 0
+                        else:
+                            grab_from = 0
+                    else:
+                        if grab_from[1] == 'in' and ch == 0:
+                            inventory[grab_from[0]], inventory[y * 3 + x] = inventory[y * 3 + x], grab_item
+                        elif grab_from[1] == 'in' and ch == 1:
+                            inventory[grab_from[0]], chests[chest_active].inventory[y * 3 + x] = \
+                                chests[chest_active].inventory[y * 3 + x], grab_item
+                        elif grab_from[1] == 'ch' and ch == 0:
+                            chests[chest_active].inventory[grab_from[0]], inventory[y * 3 + x] = inventory[
+                                                                                        y * 3 + x], grab_item
+                        elif grab_from[1] == 'ch' and ch == 1:
+                            chests[chest_active].inventory[grab_from[0]], chests[chest_active].inventory[y * 3 + x] = \
+                                chests[chest_active].inventory[y * 3 + x], grab_item
     # движение героя
     if move_left:
         channel1.play(move_sound1)
