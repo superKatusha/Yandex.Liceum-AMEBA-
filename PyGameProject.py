@@ -155,22 +155,22 @@ def collision(ent, x, y):
                 window.map[map_y1][map_x2] == 'd' and
                 window.map[map_y2][map_x1] == '.' and
                 window.map[map_y2][map_x2] == '.'):
-            return ['DoorD']
+            return ['DoorD', damage]
         elif (window.map[map_y1][map_x1] == '.' and
                 window.map[map_y1][map_x2] == '.' and
                 window.map[map_y2][map_x1] == 'd' and
                 window.map[map_y2][map_x2] == 'd'):
-            return ['DoorU']
+            return ['DoorU', damage]
         elif (window.map[map_y1][map_x1] == 'd' and
                 window.map[map_y1][map_x2] == '.' and
                 window.map[map_y2][map_x1] == 'd' and
                 window.map[map_y2][map_x2] == '.'):
-            return ['DoorR']
+            return ['DoorR', damage]
         elif (window.map[map_y1][map_x1] == '.' and
                 window.map[map_y1][map_x2] == 'd' and
                 window.map[map_y2][map_x1] == '.' and
                 window.map[map_y2][map_x2] == 'd'):
-            return ['DoorL']
+            return ['DoorL', damage]
     if (window.map[map_y1][map_x1] == 'D' or
             window.map[map_y1][map_x2] == 'D' or
             window.map[map_y2][map_x1] == 'D' or
