@@ -99,6 +99,78 @@ def draw_inventory():
                     [cords[0] + dx, cords[1] + dy])
 
 
+def save():
+    with open('saves/1.txt', 'w') as file:
+        tmp = []
+        file.write(str(hp) + '\n')
+        for elem in ammo:
+            tmp.append(elem + ' ' + str(ammo[elem]))
+        file.write(' '.join(tmp) + '\n')
+        file.write(str(active) + '\n')
+        file.write(str(step) + '\n')
+        file.write(chest_active + '\n')
+        file.write(a + '\n')
+        file.write(str(window.block_size) + '\n')
+        file.write(' '.join([str(window.room_x), str(window.room_y), str(window.room_width), str(window.room_height)]) + '\n')
+        file.write(' '.join([str(hero.x), str(hero.y)]) + '\n')
+        file.write(str(len(bullets)) + '\n')
+        for b in bullets:
+            tmp = [str(b.dx), str(b.dy), b.name, str(b.x), str(b.y), str(b.speed), str(b.dmg)]
+            file.write(' '.join(tmp) + '\n')
+        file.write(str(len(enemies)) + '\n')
+        for e in enemies:
+            tmp = [str(e.x), str(e.y), e.name, str(e.hp), str(e.fire_rate), str(e.cooldown)]
+            file.write(' '.join(tmp) + '\n')
+        file.write(str(len(traders)) + '\n')
+        for t in traders:
+            tmp = [str(t.x), str(t.y)]
+            file.write(' '.join(tmp) + '\n')
+        file.write(str(len(inventory)) + '\n')
+        for i in inventory:
+            tmp = ['0']
+            if type(i) is Weapon:
+                tmp = ['Weapon', str(guns.index(i))]
+            elif type(i) is Staff:
+                tmp = ['Staff', i.name, str(i.ammo)]
+            file.write(' '.join(tmp) + '\n')
+        default()
+
+
+def default():
+    global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from,\
+        grab_item, menu, pause, grab, inventory_open, chest_open
+    a = ''
+    hp = 100
+    ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10, '12mm': 10}
+    active = 0
+    step = 0
+    chest_active = ''
+    bullets = []
+    enemies = []
+    traders = []
+    entities = []
+    inventory = [guns[0], guns[1], guns[2], guns[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    x, y = 0, 0
+    grab_from, grab_item = 0, 0
+    menu = True
+    pause = False
+    grab = False
+    inventory_open = False
+    chest_open = False
+
+
+def load():
+    global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from, \
+        grab_item, menu, pause, grab, inventory_open, chest_open
+    with open('saves/1.txt') as file:
+        x = list(map(lambda x: x.strip(), file.readlines()))
+        hp = int(x[0])
+        tmp = x[1].split()
+        for elem in ammo:
+            i = tmp.index(elem)
+            ammo[elem] = int(tmp[i + 1])
+
+
 def draw_pause():
     cords = pygame.mouse.get_pos()
     screen.blit(sprites['dark'], [0, 0])
@@ -352,28 +424,31 @@ class Trader(Entity):
 
 
 class Hero(Entity):
-    def __init__(self):
+    def __init__(self, *cords):
         self.room_x, self.room_x1, self.room_y, self.room_y1 = 0, 0, 0, 0
-        i, j = 0, 0
-        flag = False
-        for i in range(window.map_size[1]):
-            for j in range(window.map_size[0]):
-                if window.map[i][j] == '@':
-                    window.map[i][j] = '.'
-                    flag = True
+        if len(cords) == 0:
+            flag = False
+            i, j = 0, 0
+            for i in range(window.map_size[1]):
+                for j in range(window.map_size[0]):
+                    if window.map[i][j] == '@':
+                        window.map[i][j] = '.'
+                        flag = True
+                        break
+                if flag:
                     break
-            if flag:
-                break
-        self.room_init(i, j)
-        self.width = int(round(0.7 * window.block_size))
-        self.height = int(round(1 * window.block_size))
-        self.x = j * window.block_size + window.block_size - self.width // 2
-        self.y = i * window.block_size
+            self.room_init(i, j)
+            self.width = int(round(0.7 * window.block_size))
+            self.height = int(round(1 * window.block_size))
+            self.x = j * window.block_size + window.block_size - self.width // 2
+            self.y = i * window.block_size
+        # else:
+        #     self.x = cords[0]
+        #     self.y = cords[1]
         self.name = 'hero'
         super().__init__([self.x, self.y + 0.5 * self.height, self.width, 0.5 * self.height], 'hero')
 
     def move(self, x, y):
-        print(self.x, self.y)
         dx = x
         dy = y
         col = collision(self, dx, dy)
@@ -391,7 +466,6 @@ class Hero(Entity):
                     tmp.append('@')
                 else:
                     tmp.append(window.map[i][j])
-            print(tmp)
         # обновление текущей комнаты
         if col == 'DoorD':
             self.room_upd('D')
@@ -523,10 +597,9 @@ class Bullet(Window):
         x2 = int((self.y + self.speed * self.dy + self.side) // window.block_size)
         if (window.map[x1][y1] in '#d' or window.map[x2][y1] in '#d'
                 or window.map[x1][y2] in '#d' or window.map[x2][y2] in '#d'):
-            print('wall')
             return False
         for entity in entities:
-            [x1, y1, width, height] = entity.get_rect()
+            x1, y1, width, height = entity.x, entity.y, entity.width, entity.height
             x2 = x1 + width
             y2 = y1 + height
             if (entity.type == 'hero' and self.name == 'enemy') or (entity.type == 'enemy' and self.name == 'hero'):
@@ -534,7 +607,6 @@ class Bullet(Window):
                         (x2 >= self.x >= x1 and y2 >= self.y + self.side >= y1) or
                         (x2 >= self.x + self.side >= x1 and y2 >= self.y >= y1) or
                         (x2 >= self.x + self.side >= x1 and y2 >= self.y + self.side >= y1)):
-                    print(entity.name)
                     entity.take_damage(self.dmg)
                     return False
         return True
@@ -643,10 +715,8 @@ class Weapon(Item):
         super().__init__(self.name)
 
     def shoot(self, destination):
-        print(self.cooldown)
         if self.cooldown == 0:
             self.cooldown = (60 / self.fire_rate) // 1
-            print(self.cooldown)
             if self.bul_count % 2 == 1:
                 shoot_sound1.play()
                 destination[0] -= window.dx
@@ -699,12 +769,10 @@ class Chest:
             luck = random.randint(1, 100)
             prs = 0
             for loot in chest_types[self.type]:
-                print(luck, loot[1] + prs)
                 if luck <= loot[1] + prs:
                     self.inventory[i] = loot[0]
                     break
                 prs += loot[1]
-        print(self.inventory)
 
 
 pygame.init()
@@ -793,7 +861,13 @@ while running:
                     a += chr(event.key)
         elif pause:
             if event.type == pygame.MOUSEBUTTONDOWN:
-                pass
+                cords = list(event.pos)
+                if 129 < cords[0] < 420:
+                    if 200 < cords[1] < 267:
+                        pause = False
+                    elif 272 < cords[1] < 339:
+                        save()
+                        menu = True
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pause = False
