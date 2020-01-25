@@ -27,9 +27,20 @@ def press_detect(pos, button):
 
 
 def start_screen():
-    fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
-    mp = pygame.mouse.get_pos()
+    fon = load_image('fon1.jpg')
+    cords = pygame.mouse.get_pos()
     screen.blit(fon, (0, 0))
+    if 129 < cords[0] < 420:
+        if 161 < cords[1] < 228:
+            screen.blit(load_image('menu_b1_a.png'), [129, 161])
+        elif 298 < cords[1] < 365:
+            screen.blit(load_image('menu_b2_a.png'), [129, 298])
+        elif 367 < cords[1] < 434:
+            screen.blit(load_image('menu_b3_a.png'), [129, 367])
+        elif 437 < cords[1] < 504:
+            screen.blit(load_image('menu_b4_a.png'), [129, 437])
+        elif 506 < cords[1] < 573:
+            screen.blit(load_image('menu_b5_a.png'), [129, 506])
 
 
 def indicators():
@@ -62,6 +73,15 @@ def draw_inventory():
     screen.blit(pygame.transform.scale(sprites['inventory'],
                                        (150, 650)),
                 [400, 0])
+    screen.blit(pygame.transform.scale(sprites['coin'], (30, 30)), [500, 500])
+    intro_text = [str(money)]
+    font = pygame.font.Font(None, 35)
+    text_coord = [485, 505]
+    for line in intro_text:
+        string_rendered = font.render(line, 1, (0, 0, 0))
+        line_rect = string_rendered.get_rect()
+        screen.blit(string_rendered, [text_coord[0] - line_rect[2], text_coord[1]])
+        text_coord[1] += line_rect[3] + 30
     for i in range(len(inventory)):
         if inventory[i] != 0:
             if i < 3:
@@ -73,8 +93,6 @@ def draw_inventory():
                 screen.blit(pygame.transform.scale(sprites[inventory[i].name], (37, 37)),
                             [x, y])
     if chest_open:
-        print(chest_active)
-        print(chests)
         chest = chests[chest_active]
         screen.blit(sprites['chest_inventory'], [200, 250])
         for i in range(len(chest.inventory)):
@@ -92,6 +110,7 @@ def draw_inventory():
 def save():
     with open('saves/1.txt', 'w') as file:
         tmp = []
+        file.write(str(difficulty) + '\n')
         file.write(str(hp) + '\n')
         for elem in ammo:
             tmp.append(elem + ' ' + str(ammo[elem]))
@@ -123,14 +142,17 @@ def save():
             elif type(i) is Staff:
                 tmp = ['Staff', i.name, str(i.ammo)]
             file.write(' '.join(tmp) + '\n')
+        file.write(str(money))
         default()
 
 
 def default():
     global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from,\
-        grab_item, menu, pause, grab, inventory_open, chest_open
+        grab_item, menu, pause, grab, inventory_open, chest_open, difficulty, money
     a = ''
+    difficulty = 1
     hp = 100
+    money = 10
     ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10, '12mm': 10}
     active = 0
     step = 0
@@ -151,44 +173,55 @@ def default():
 
 def load():
     global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from, \
-        grab_item, menu, pause, grab, inventory_open, chest_open, hero
+        grab_item, menu, pause, grab, inventory_open, chest_open, hero, difficulty, money
     with open('saves/1.txt') as file:
         x = list(map(lambda x: x.strip(), file.readlines()))
-        hp = int(x[0])
-        tmp = x[1].split()
+        difficulty = int(x[0])
+        hp = int(x[1])
+        tmp = x[2].split()
         for elem in ammo:
             i = tmp.index(elem)
             ammo[elem] = int(tmp[i + 1])
-        active = int(x[2])
-        step = int(x[3])
-        chest_active = x[4]
-        a = x[5]
-
-        window.block_size = int(x[6])
-        [window.room_x, window.room_y, window.room_width, window.room_height] = list(map(int, x[7].split()))
-        tmp = list(map(int, x[8].split()))
+        active = int(x[3])
+        step = int(x[4])
+        chest_active = x[5]
+        a = x[6]
+        with open(os.path.join('maps', a + '.txt')) as file:
+            tmp = file.readlines()
+            window.map_size = list(map(int, tmp[0].split()))
+            window.map = list(map(list, tmp[1:]))
+            for i in range(window.map_size[1]):
+                for j in range(window.map_size[0]):
+                    if window.map[i][j] in 'gs@':
+                        window.map[i][j] = '.'
+        window.block_size = int(x[7])
+        [window.room_x, window.room_y, window.room_width, window.room_height] = list(map(int, x[8].split()))
+        window.set_room(window.room_x, window.room_y, window.room_width, window.room_height)
+        tmp = list(map(int, x[9].split()))
         hero = Hero(tmp[0], tmp[1])
-        n = int(x[9])
-        cnt = 9
+        n = int(x[10])
+        cnt = 10
         for i in range(n):
             cnt += 1
             tmp = x[cnt].split()
-            bullets.append(Bullet([int(tmp[0]), int(tmp[1])], tmp[2], [int(tmp[3]), int(tmp[4])], int(tmp[5]), int(tmp[6])))
+            bullets.append(Bullet([float(tmp[0]), float(tmp[1])], tmp[2], [float(tmp[3]), float(tmp[4])], int(tmp[5]), int(tmp[6])))
         cnt += 1
         n = int(x[cnt])
         for i in range(n):
             cnt += 1
             tmp = x[cnt].split()
-            enemies.append(Enemy(int(tmp[0]), int(tmp[1]), tmp[2], int(tmp[3]), int(tmp[4])))
+            enemies.append(Enemy(float(tmp[0]), float(tmp[1]), tmp[2], int(tmp[3]), 2))
+            enemies[-1].fire_rate = int(tmp[4])
             enemies[-1].cooldown = int(tmp[5])
         cnt += 1
         n = int(x[cnt])
         for i in range(n):
             cnt += 1
             tmp = x[cnt].split()
-            traders.append(Trader(int(tmp[0]), int(tmp[1])))
+            traders.append(Trader(tmp[0], int(tmp[1]), int(tmp[2])))
         cnt += 1
         n = int(x[cnt])
+        inventory = []
         for i in range(n):
             cnt += 1
             tmp = x[cnt].split()
@@ -198,18 +231,66 @@ def load():
                 inventory.append(Staff(tmp[1], int(tmp[2])))
             else:
                 inventory.append(0)
+        money = int(x[cnt + 1])
+        entities = [hero, *enemies, *traders]
 
 
 def draw_pause():
     cords = pygame.mouse.get_pos()
-    screen.blit(sprites['dark'], [0, 0])
-    screen.blit(sprites['pause_b1'], [129, 200])
-    screen.blit(sprites['pause_b2'], [129, 272])
+    screen.blit(load_image('dark.png'), [0, 0])
+    screen.blit(load_image('pause_continue.png'), [129, 200])
+    screen.blit(load_image('pause_save.png'), [129, 272])
     if 129 < cords[0] < 420:
         if 200 < cords[1] < 267:
-            screen.blit(sprites['pause_b1_a'], [129, 200])
+            screen.blit(load_image('pause_continue_a.png'), [129, 200])
         elif 272 < cords[1] < 339:
-            screen.blit(sprites['pause_b2_a'], [129, 272])
+            screen.blit(load_image('pause_save_a.png'), [129, 272])
+
+
+def draw_settings():
+    cords = pygame.mouse.get_pos()
+    screen.blit(sprites['fon'], [0, 0])
+    k = 0
+    if 161 < cords[1] < 228 and 129 < cords[0] < 420:
+        k = 1
+    if difficulty == 0.8:
+        if k == 1:
+            screen.blit(load_image('dif_0_a.png'), [129, 161])
+        else:
+            screen.blit(load_image('dif_0.png'), [129, 161])
+    elif difficulty == 1:
+        if k == 1:
+            screen.blit(load_image('dif_1_a.png'), [129, 161])
+        else:
+            screen.blit(load_image('dif_1.png'), [129, 161])
+    elif difficulty == 1.2:
+        if k == 1:
+            screen.blit(load_image('dif_2_a.png'), [129, 161])
+        else:
+            screen.blit(load_image('dif_2.png'), [129, 161])
+    elif difficulty == 2:
+        if k == 1:
+            screen.blit(load_image('dif_3_a.png'), [129, 161])
+        else:
+            screen.blit(load_image('dif_3.png'), [129, 161])
+    if 367 < cords[1] < 434 and 129 < cords[0] < 420:
+        screen.blit(load_image('back_to_manu_a.png'), [129, 367])
+    else:
+        screen.blit(load_image('back_to_manu.png'), [129, 367])
+
+
+def draw_trade(x, y):
+    screen.blit(load_image('trader_list.png'), [x, y])
+    cords = pygame.mouse.get_pos()
+    if x + 10 < cords[0] < x + 190:
+        if y + 5 < cords[1] < y + 46:
+            screen.blit(load_image('trader_list_1.png'), [x + 10, y + 5])
+        elif y + 47 < cords[1] < y + 87:
+            screen.blit(load_image('trader_list_2.png'), [x + 10, y + 47])
+        elif y + 87 < cords[1] < y + 128:
+            screen.blit(load_image('trader_list_3.png'), [x + 10, y + 87])
+        elif y + 128 < cords[1] < y + 169:
+            screen.blit(load_image('trader_list_4.png'), [x + 10, y + 128])
 
 
 def collision(ent, x, y):
@@ -321,7 +402,11 @@ class Window:
 
     def render(self):
         if menu:
-            start_screen()  # меню игры
+            # меню игры
+            start_screen()
+        elif settings:
+            # настройки
+            draw_settings()
         else:
             indicators()  # отрисовка индикаторов (хп, патроны и т.д.)
             en = []
@@ -333,7 +418,7 @@ class Window:
             # отрисовка карты
             for i in range(self.room_y, self.room_y + self.room_height + 1):
                 for j in range(self.room_x, self.room_x + self.room_width + 1):
-                    if self.map[i][j] == '.':
+                    if self.map[i][j] in '.T':
                         screen.blit(pygame.transform.scale(sprites['grass'],
                                                            (self.x, self.x)),
                                     [self.dx + j * self.x, self.dy + i * self.x])
@@ -392,6 +477,8 @@ class Window:
                                                                (int(entity.width * self.scale),
                                                                 int(entity.height * self.scale))),
                                         [self.dx + entity.x, self.dy + entity.y])
+                            if trade and entity == traders[trader_active]:
+                                draw_trade(entity.type, self.dx + entity.x + entity.width + 5, self.dy + entity.y - 190)
             for bullet in bullets:
                 # отрисовка пуль
                 if bullet.name == 'enemy':
@@ -592,6 +679,8 @@ class Hero(Entity):
     def take_damage(self, damage):
         global hp
         hp -= damage
+        if damage > 0:
+            damage_sound.play()
         if hp < 0:
             hp = 0
 
@@ -611,6 +700,7 @@ class Bullet(Window):
     def get_dmg(self):
         return self.dmg
 
+    # перемещение пули
     def move(self):
         if self.collision():
             self.x += self.speed * self.dx
@@ -621,6 +711,7 @@ class Bullet(Window):
     def get_pos(self):
         return [self.x, self.y]
 
+    # проверка на пересечение пули с объектами
     def collision(self):
         y1 = int((self.x + self.speed * self.dx) // window.block_size)
         y2 = int((self.x + self.speed * self.dx + self.side) // window.block_size)
@@ -647,11 +738,13 @@ class Enemy(Entity):
     def __init__(self, x, y, name, hp, fire_rate):
         self.hp = hp
         self.speed = 1
+        if difficulty == 2:
+            self.speed = 2
         self.fire_rate = int(60 / fire_rate)
         self.cooldown = self.fire_rate
         self.width = int(round(0.7 * window.block_size))
         self.height = int(round(1 * window.block_size))
-        self.dmg = 15
+        self.dmg = int(15 * difficulty)
         self.b_speed = 2
         self.name = name
         self.type = 'enemy'
@@ -661,6 +754,7 @@ class Enemy(Entity):
         self.y = y
         super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], self.type)
 
+    # перемещение врагов
     def move(self):
         if self.name == 'ghost':
             destination = hero.get_pos()
@@ -669,29 +763,37 @@ class Enemy(Entity):
             if dy != 0 and dx != 0:
                 k = math.atan(dx / dy)
                 if destination[1] - self.y < 0:
-                    dx, dy = -math.sin(k), -math.cos(k)
+                    dx, dy = -math.sin(k) * self.speed, -math.cos(k) * self.speed
                 else:
                     dx, dy = math.sin(k), math.cos(k)
             elif dx == 0 and dy > 0:
-                dx, dy = 0, 1
+                dx, dy = 0, self.speed
             elif dy == 0 and dx > 0:
-                dx, dy = 1, 0
-            self.col = collision(self, dx, dy)
-            col = self.col
-            if col in ['False', 'Wall']:
-                self.x += dx
-                self.y += dy
-            else:
+                dx, dy = self.speed, 0
+            self.col = 'False'
+            col = collision(self, dx, 0)
+            if col not in ['False', 'Wall']:
                 dx = 0
+            col1 = collision(self, 0, dy)
+            if col1 not in ['False', 'Wall']:
                 dy = 0
+            if dx == 0 and dy != 0:
+                dy = int(dy / abs(dy) * self.speed)
+            elif dx != 0 and dy == 0:
+                dx = int(dx / abs(dx) * self.speed)
+            self.x += dx
+            self.y += dy
             super().move(dx, dy)
+            if 'hero' in [col, col1]:
+                self.col = 'hero'
 
+    # атака врагов
     def atack(self):
         global hp
         if self.cooldown == 0:
             self.cooldown = self.fire_rate
             if self.name == 'ghost':
-                if self.col[0] == 'hero':
+                if self.col == 'hero':
                     hp -= 15
                     if hp < 0:
                         hp = 0
@@ -712,15 +814,19 @@ class Enemy(Entity):
                 bullets.append(Bullet([dx, dy], 'enemy', [self.x + 0.5 * window.block_size,
                                                           self.y + 0.5 * window.block_size], self.b_speed, self.dmg))
 
+    # задержка атаки
     def cool(self):
         if self.cooldown > 0:
             self.cooldown -= 1
 
+    # получение урона
     def take_damage(self, damage):
+        global money
         self.hp -= damage
         if damage != 0:
             damaged_sound1.play()
         if self.hp < 1:
+            money += 1
             enemies.remove(self)
             entities.remove(self)
 
@@ -736,7 +842,7 @@ class Item:
 class Weapon(Item):
     def __init__(self, b_speed, dmg, magazin, fire_rate, name, ammo, bul_count=1):
         self.b_speed = b_speed
-        self.dmg = dmg
+        self.dmg = int(dmg / difficulty)
         self.magazin = magazin
         self.fire_rate = fire_rate
         self.name = name
@@ -771,7 +877,7 @@ class Weapon(Item):
                         dx, dy = -math.sin(k + math.pi/12), -math.cos(k + math.pi/12)
                     else:
                         dx, dy = math.sin(k + math.pi/12), math.cos(k + math.pi/12)
-                    bullets.append(Bullet([dx, dy], cords, self.b_speed, self.dmg))
+                    bullets.append(Bullet([dx, dy], 'hero', cords, self.b_speed, self.dmg))
                     if destination[1] - cords[1] < 0:
                         dx, dy = -math.sin(k - math.pi/12), -math.cos(k - math.pi/12)
                     else:
@@ -810,6 +916,8 @@ pygame.init()
 a = ''
 FPS = 60
 hp = 100
+difficulty = 1
+money = 10
 guns = [Weapon(2, 25, 25, 3, 'pistol', '9mm'),
         Weapon(3, 40, 30, 5, 'auto', '5.56mm'),
         Weapon(6, 100, 5, 0.7, 'snipe', '7.62mm'),
@@ -824,22 +932,24 @@ sprites = {'grass': load_image('grass.png'), 'hero': AnimatedSprite(load_image('
            'water': load_image('water.png'), 'hp': load_image('hp.png'),
            'bull': load_image('bullet-i.png'), 'open_door': load_image('open_door.png'),
            'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory1.png'),
-           'pistol': load_image('pistol.png'), 'auto': load_image('auto.png'),
+           'pistol': load_image('pistol.png'), 'auto': load_image('auto.png'), 'coin': load_image('coin.png'),
            'snipe': load_image('snipe.png'), 'bullet_1': load_image('bullet.png'),
-           'bullet_2': load_image('bullet (1).png'), 'dark': load_image('dark.png'),
+           'bullet_2': load_image('bullet (1).png'), 'fon': load_image('fon.png'),
            'shotgun': load_image('shotgun.png'), 'chest_inventory': load_image('chest_inventory.png'),
-           'chest': load_image('chest.png'), 'shooter': load_image('shooting.png'),
-           'pause_b1': load_image('pause_continue.png'), 'pause_b1_a': load_image('pause_continue_1.png'),
-           'pause_b2': load_image('pause_save.png'), 'pause_b2_a': load_image('pause_save_1.png')}
+           'chest': load_image('chest.png'), 'shooter': load_image('shooting.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
 shoot_sound1 = pygame.mixer.Sound('sounds/shot_1.wav')
 damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
-move_sound1 = pygame.mixer.Sound('sounds/move_hero.wav')
+damage_sound = pygame.mixer.Sound('sounds/damage.wav')
+move_sound1 = pygame.mixer.Sound('sounds/move_hero1.wav')
+cash = pygame.mixer.Sound('sounds/purchase.wav')
 chest_types = {'starter': [[guns[0], 25], [guns[1], 10], [guns[2], 2], [guns[3], 1]]}
 chests = {'16 4': Chest('starter')}
 chest_active = ''
+trader_active = 0
+tmp_sprites = []
 bullets = []
 enemies = []
 traders = []
@@ -850,86 +960,78 @@ grab_from, grab_item = 0, 0
 screen = pygame.display.set_mode(size)
 window = Window(size)
 running = True
+trade = False
 menu = True
 pause = False
+settings = False
 grab = False
 inventory_open = False
 chest_open = False
 move_left, move_right, move_up, move_down = False, False, False, False
 clock = pygame.time.Clock()
-menu = False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             terminate()
         if menu:
             if event.type == pygame.MOUSEBUTTONDOWN:
-                pos = list(event.pos)
-                print(pos)
+                cords = list(event.pos)
                 a = 'arena'
-                if pos[0] in range(90, 450) and pos[1] in range(130, 180):
-                    if os.path.exists(os.path.join('maps', a + '.txt')):
-                        window.input_map(a + '.txt')
+                if 129 < cords[0] < 420:
+                    if 161 < cords[1] < 228:
+                        if os.path.exists(os.path.join('maps', a + '.txt')):
+                            window.input_map(a + '.txt')
+                            menu = False
+                            hero = Hero()  # определение героя + # определение комнаты
+                            print(window.map_size)
+                            for i in range(window.map_size[1]):
+                                for j in range(window.map_size[0]):
+                                    x = j * window.block_size + (window.block_size - hero.width) // 2
+                                    y = i * window.block_size
+                                    if window.map[i][j] == 'T':
+                                        window.map[i][j] = '.'
+                                        traders.append(Trader(x, y))
+                                    elif window.map[i][j] == 'g':
+                                        window.map[i][j] = '.'
+                                        enemies.append(Enemy(x, y, 'ghost', 100, 2))
+                                    elif window.map[i][j] == 's':
+                                        window.map[i][j] = '.'
+                                        enemies.append(Enemy(x, y, 'shooter', 100, 2))
+                            entities = [hero, *enemies, *traders]
+                    elif 298 < cords[1] < 365:
                         menu = False
-                        hero = Hero()  # определение героя + # определение комнаты
-                        print(window.map_size)
-                        for i in range(window.map_size[1]):
-                            for j in range(window.map_size[0]):
-                                x = j * window.block_size + (window.block_size - hero.width) // 2
-                                y = i * window.block_size
-                                if window.map[i][j] == 'T':
-                                    window.map[i][j] = '.'
-                                    traders.append(Trader(x, y))
-                                elif window.map[i][j] == 'g':
-                                    window.map[i][j] = '.'
-                                    enemies.append(Enemy(x, y, 'ghost', 100, 2))
-                                elif window.map[i][j] == 's':
-                                    window.map[i][j] = '.'
-                                    enemies.append(Enemy(x, y, 'shooter', 100, 2))
-                        entities = [hero, *enemies, *traders]
-                    elif pos[1] in range(247, 297) and pos[0] in range(90, 450):
-                        print('Continue')
-                    elif pos[1] in range(347, 397) and pos[0] in range(90, 450):
-                        print('Records')
-                    elif pos[1] in range(450, 500) and pos[0] in range(90, 450):
-                        print('Options')
-        if menu:
-            if event.type == pygame.KEYDOWN:
-                if event.key == 13:
-                    if os.path.exists(os.path.join('maps', a + '.txt')):
-                        window.input_map(a + '.txt')
+                        load()
+                    elif 367 < cords[1] < 434:
                         menu = False
-                        hero = Hero()  # определение героя + # определение комнаты
-                        for i in range(window.map_size[1]):
-                            for j in range(window.map_size[0]):
-                                x = j * window.block_size + (window.block_size - hero.width) // 2
-                                y = i * window.block_size
-                                if window.map[i][j] == 'T':
-                                    window.map[i][j] = '.'
-                                    traders.append(Trader(x, y))
-                                elif window.map[i][j] == 'g':
-                                    window.map[i][j] = '.'
-                                    enemies.append(Enemy(x, y, 'ghost', 100, 2))
-                                elif window.map[i][j] == 's':
-                                    window.map[i][j] = '.'
-                                    enemies.append(Enemy(x, y, 'shooter', 100, 2))
-                        entities = [hero, *enemies, *traders]
-                    else:
-                        print('несуществующая карта')
+                        table_lid = True
+                    elif 437 < cords[1] < 504:
+                        menu = False
+                        settings = True
+                    elif 506 < cords[1] < 573:
                         terminate()
-                elif event.key == pygame.K_BACKSPACE:
-                    if len(a) != 0:
-                        a = a[:-1]
-                else:
-                    a += chr(event.key)
+        elif settings:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                cords = list(event.pos)
+                if 129 < cords[0] < 420:
+                    if 161 < cords[1] < 228:
+                        if difficulty == 1.2:
+                            difficulty = 2
+                        elif difficulty == 2:
+                            difficulty = 0.8
+                        else:
+                            difficulty += 0.2
+                    elif 367 < cords[1] < 434:
+                        settings = False
+                        menu = True
         elif pause:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 cords = list(event.pos)
                 if 129 < cords[0] < 420:
                     if 200 < cords[1] < 267:
                         pause = False
-                    elif 272 < cords[1] < 339:
+                    elif 367 < cords[1] < 434:
                         save()
+                        pause = False
                         menu = True
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -984,6 +1086,15 @@ while running:
                     cords = list(event.pos)
                     map_x = (cords[0] - window.dx) // window.block_size
                     map_y = (cords[1] - window.dy) // window.block_size
+                    if not trade:
+                        # детект нажатия на торговца
+                        trader_active = -1
+                        for i in range(len(traders)):
+                            if (traders[i].x + window.dx < cords[0] < traders[i].x + traders[i].width + window.dx and
+                                    traders[i].y + window.dy < cords[1] < traders[i].y + traders[i].height + window.dy):
+                                trader_active = i
+                                break
+                        print(trader_active)
                     if inventory_open:
                         # перетаскивание предметов в инвентаре
                         if not grab:
@@ -1036,12 +1147,41 @@ while running:
                                         grab_item = chest.inventory[y * 3 + x]
                                         chest.inventory[y * 3 + x] = 0
                                         print('grab {} {}'.format(y, x), grab_item)
+                    elif trade:
+                        x = window.dx + traders[trader_active].x + traders[trader_active].width + 5
+                        y = window.dy + traders[trader_active].y - 190
+                        if x + 10 < cords[0] < x + 190:
+                            if y + 5 < cords[1] < y + 46:
+                                if money >= 5:
+                                    money -= 5
+                                    ammo['9mm'] += 35
+                                    cash.play()
+                            elif y + 47 < cords[1] < y + 87:
+                                if money >= 5:
+                                    money -= 5
+                                    ammo['5.56mm'] += 25
+                                    cash.play()
+                            elif y + 87 < cords[1] < y + 128:
+                                if money >= 5:
+                                    money -= 5
+                                    ammo['12mm'] += 15
+                                    cash.play()
+                            elif y + 128 < cords[1] < y + 169:
+                                if money >= 5:
+                                    money -= 5
+                                    ammo['7.62mm'] += 10
+                                    cash.play()
+                    # взаимодействие с сундуком
                     elif window.map[map_y][map_x] == 'c':
                         if (abs(hero.x // window.block_size - map_x) < 3 and
                                 abs(hero.y // window.block_size - map_y) < 3):
                             inventory_open = True
                             chest_open = True
                             chest_active = '{} {}'.format(map_x, map_y)
+                    elif trader_active != -1:
+                        if (abs(hero.x - traders[trader_active].x) <= 2 * window.block_size and
+                                abs(hero.y - traders[trader_active].y) <= 2 * window.block_size):
+                            trade = True
                     # стрельба
                     elif type(inventory[active]) is Weapon:
                         if ammo[inventory[active].ammo] > 0:
@@ -1106,6 +1246,8 @@ while running:
                             chests[chest_active].inventory[grab_from[0]], chests[chest_active].inventory[y * 3 + x] = \
                                 chests[chest_active].inventory[y * 3 + x], grab_item
     if not pause:
+        if move_left or move_right or move_down or move_up:
+            trade = False
         # движение героя
         if move_left:
             channel1.play(move_sound1)
