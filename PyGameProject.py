@@ -27,19 +27,9 @@ def press_detect(pos, button):
 
 
 def start_screen():
-    intro_text = ["ROGALIC"]
     fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
+    mp = pygame.mouse.get_pos()
     screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 50)
-    text_coord = [275, 90]
-    for line in intro_text:
-        string_rendered = font.render(line, 1, (255, 0, 0))
-        line_rect = string_rendered.get_rect()
-        screen.blit(string_rendered, [text_coord[0] - (line_rect[2] // 2), text_coord[1]])
-        text_coord[1] += line_rect[3] + 30
-    screen.blit(font.render('ВВЕДИТЕ НАЗВАНИЕ КАРТЫ', 1, (0, 0, 0)), [20, 300])
-    pygame.draw.rect(screen, (255, 255, 255), [125, 350, 300, 40])
-    screen.blit(font.render(a, 1, (0, 0, 0)), [130, 350])
 
 
 def indicators():
@@ -830,6 +820,36 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             terminate()
+        if menu:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pos = list(event.pos)
+                print(pos)
+                a = 'arena'
+                if pos[0] in range(90, 450) and pos[1] in range(130, 180):
+                    if os.path.exists(os.path.join('maps', a + '.txt')):
+                        window.input_map(a + '.txt')
+                        menu = False
+                        hero = Hero()  # определение героя + # определение комнаты
+                        for i in range(window.map_size[1]):
+                            for j in range(window.map_size[0]):
+                                x = j * window.block_size + (window.block_size - hero.width) // 2
+                                y = i * window.block_size
+                                if window.map[i][j] == 'T':
+                                    window.map[i][j] = '.'
+                                    traders.append(Trader(x, y))
+                                elif window.map[i][j] == 'g':
+                                    window.map[i][j] = '.'
+                                    enemies.append(Enemy(x, y, 'ghost', 100, 2))
+                                elif window.map[i][j] == 's':
+                                    window.map[i][j] = '.'
+                                    enemies.append(Enemy(x, y, 'shooter', 100, 2))
+                        entities = [hero, *enemies, *traders]
+                    elif pos[1] in range(247, 297) and pos[0] in range(90, 450):
+                        print('Continue')
+                    elif pos[1] in range(347, 397) and pos[0] in range(90, 450):
+                        print('Records')
+                    elif pos[1] in range(450, 500) and pos[0] in range(90, 450):
+                        print('Options')
         if menu:
             if event.type == pygame.KEYDOWN:
                 if event.key == 13:
