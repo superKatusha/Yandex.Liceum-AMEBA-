@@ -457,9 +457,9 @@ class Hero(Entity):
         else:
             dx = 0
             dy = 0
-        for i in range(window.map_size[0]):
+        for i in range(window.map_size[1]):
             tmp = []
-            for j in range(window.map_size[1]):
+            for j in range(window.map_size[0]):
                 if j == self.x_pos // window.block_size and i == self.y_pos // window.block_size:
                     tmp.append('@')
                 else:
@@ -838,6 +838,7 @@ while running:
                         window.input_map(a + '.txt')
                         menu = False
                         hero = Hero()  # определение героя + # определение комнаты
+                        print(window.map_size)
                         for i in range(window.map_size[1]):
                             for j in range(window.map_size[0]):
                                 x = j * window.block_size + (window.block_size - hero.width) // 2
