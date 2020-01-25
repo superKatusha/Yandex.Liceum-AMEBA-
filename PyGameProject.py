@@ -99,25 +99,19 @@ def draw_inventory():
                     [cords[0] + dx, cords[1] + dy])
 
 
+def draw_pause():
+    cords = pygame.mouse.get_pos()
+    screen.blit(sprites['dark'], [0, 0])
+    screen.blit(sprites['pause_b1'], [129, 200])
+    screen.blit(sprites['pause_b2'], [129, 272])
+    if 129 < cords[0] < 420:
+        if 200 < cords[1] < 267:
+            screen.blit(sprites['pause_b1_a'], [129, 200])
+        elif 272 < cords[1] < 339:
+            screen.blit(sprites['pause_b2_a'], [129, 272])
+
+
 def collision(ent, x, y):
-    damage = 0
-    b_name = ''
-    if ent.name == 'hero':
-        b_name = 'enemy'
-    elif ent.name == 'enemy':
-        b_name = 'hero'
-    for bullet in bullets:
-        if bullet.name == b_name:
-            x1, y1 = ent.get_pos()
-            x2, y2 = x1 + ent.width, y1 + ent.height
-            [x21, y21] = bullet.get_pos()
-            x22, y22 = x21 + 7, y21 + 7
-            if ((x2 >= x21 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y21 >= y1) or
-                (x2 >= x21 >= x1 and y2 >= y22 >= y1) or
-                (x2 >= x22 >= x1 and y2 >= y22 >= y1)):
-                damage += bullet.dmg
-                bullets.remove(bullet)
     [x1, y1, width, height] = ent.get_rect()
     x1 += x
     x2 = x1 + width
@@ -144,39 +138,39 @@ def collision(ent, x, y):
                     (x22 >= x2 >= x21 and y22 >= y2 >= y21) or
                     (x22 >= x1 >= x21 and y22 >= y2 >= y21) or
                     (x22 >= x2 >= x21 and y22 >= y1 >= y21)):
-                return [entity.name, damage]
+                return entity.type
     if (window.map[map_y1][map_x1] in '#=' or
             window.map[map_y1][map_x2] in '#=' or
             window.map[map_y2][map_x1] in '#=' or
             window.map[map_y2][map_x2] in '#='):
-        return ['Wall', damage]
+        return 'Wall'
     if ent.name == 'hero':
         if (window.map[map_y1][map_x1] == 'd' and
                 window.map[map_y1][map_x2] == 'd' and
                 window.map[map_y2][map_x1] == '.' and
                 window.map[map_y2][map_x2] == '.'):
-            return ['DoorD', damage]
+            return 'DoorD'
         elif (window.map[map_y1][map_x1] == '.' and
                 window.map[map_y1][map_x2] == '.' and
                 window.map[map_y2][map_x1] == 'd' and
                 window.map[map_y2][map_x2] == 'd'):
-            return ['DoorU', damage]
+            return 'DoorU'
         elif (window.map[map_y1][map_x1] == 'd' and
                 window.map[map_y1][map_x2] == '.' and
                 window.map[map_y2][map_x1] == 'd' and
                 window.map[map_y2][map_x2] == '.'):
-            return ['DoorR', damage]
+            return 'DoorR'
         elif (window.map[map_y1][map_x1] == '.' and
                 window.map[map_y1][map_x2] == 'd' and
                 window.map[map_y2][map_x1] == '.' and
                 window.map[map_y2][map_x2] == 'd'):
-            return ['DoorL', damage]
+            return 'DoorL'
     if (window.map[map_y1][map_x1] == 'D' or
             window.map[map_y1][map_x2] == 'D' or
             window.map[map_y2][map_x1] == 'D' or
             window.map[map_y2][map_x2] == 'D'):
-        return ['Door', damage]
-    return ['False', damage]
+        return 'Door'
+    return 'False'
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -230,6 +224,7 @@ class Window:
         else:
             indicators()  # отрисовка индикаторов (хп, патроны и т.д.)
             en = []
+            # определение врагов в комнате
             for enemy in enemies:
                 if (self.room_x + self.room_width > enemy.x // window.block_size > self.room_x - 1 and
                         self.room_y + self.room_height > enemy.y // window.block_size > self.room_y - 1):
@@ -296,15 +291,21 @@ class Window:
                                                                (int(entity.width * self.scale),
                                                                 int(entity.height * self.scale))),
                                         [self.dx + entity.x, self.dy + entity.y])
-
             for bullet in bullets:
                 # отрисовка пуль
-                screen.blit(pygame.transform.scale(sprites['bullet'],
+                if bullet.name == 'enemy':
+                    b_name = 'bullet_2'
+                else:
+                    b_name = 'bullet_1'
+                screen.blit(pygame.transform.scale(sprites[b_name],
                                                    (int(self.bul_size * self.scale), int(self.bul_size * self.scale))),
                             [self.dx + bullet.x, self.dy + bullet.y])
             if inventory_open:
                 # отрисовка инвенторя
                 draw_inventory()
+            if pause:
+                # отрисрвка окна паузы
+                draw_pause()
 
     def set_room(self, *rect):
         # получение координат границ текущей комнаты и расчёты координат для её отрисовки
@@ -322,9 +323,9 @@ class Window:
 
 
 class Entity:
-    def __init__(self, rect, name):
+    def __init__(self, rect, type):
         [self.x_pos, self.y_pos, self.width_pos, self.height_pos] = rect
-        self.name = name
+        self.type = type
 
     def get_rect(self):
         return [self.x_pos, self.y_pos, self.width_pos, self.height_pos]
@@ -343,6 +344,7 @@ class Trader(Entity):
         self.height = int(round(1 * window.block_size))
         self.x = x
         self.y = y
+        self.name = 'trader'
         super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], 'trader')
 
     def get_pos(self):
@@ -367,6 +369,7 @@ class Hero(Entity):
         self.height = int(round(1 * window.block_size))
         self.x = j * window.block_size + window.block_size - self.width // 2
         self.y = i * window.block_size
+        self.name = 'hero'
         super().__init__([self.x, self.y + 0.5 * self.height, self.width, 0.5 * self.height], 'hero')
 
     def move(self, x, y):
@@ -374,9 +377,8 @@ class Hero(Entity):
         dx = x
         dy = y
         col = collision(self, dx, dy)
-        print(col)
         # перемещение героя
-        if col[0] in ['False', 'DoorU', 'DoorD', 'DoorR', 'DoorL']:
+        if col in ['False', 'DoorU', 'DoorD', 'DoorR', 'DoorL']:
             self.x += dx
             self.y += dy
         else:
@@ -391,16 +393,16 @@ class Hero(Entity):
                     tmp.append(window.map[i][j])
             print(tmp)
         # обновление текущей комнаты
-        if col[0] == 'DoorD':
+        if col == 'DoorD':
             self.room_upd('D')
             print('D')
-        elif col[0] == 'DoorU':
+        elif col == 'DoorU':
             self.room_upd('U')
             print('U')
-        elif col[0] == 'DoorR':
+        elif col == 'DoorR':
             self.room_upd('R')
             print('R')
-        elif col[0] == 'DoorL':
+        elif col == 'DoorL':
             self.room_upd('L')
             print('L')
         super().move(dx, dy)
@@ -482,8 +484,11 @@ class Hero(Entity):
                 super().move(-window.block_size, 0)
         window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y)
 
-    def redraw(self):
-        pass
+    def take_damage(self, damage):
+        global hp
+        hp -= damage
+        if hp < 0:
+            hp = 0
 
     def get_pos(self):
         return [self.x, self.y]
@@ -495,8 +500,8 @@ class Bullet(Window):
         self.x, self.y = cords[0], cords[1]
         self.speed = speed
         self.name = name
-        self.a = True
         self.dmg = dmg
+        self.side = 7
 
     def get_dmg(self):
         return self.dmg
@@ -506,24 +511,37 @@ class Bullet(Window):
             self.x += self.speed * self.dx
             self.y += self.speed * self.dy
         else:
-            self.a = False
+            bullets.remove(self)
 
     def get_pos(self):
         return [self.x, self.y]
 
     def collision(self):
         y1 = int((self.x + self.speed * self.dx) // window.block_size)
-        y2 = int((self.x + self.speed * self.dx + window.bul_size) // window.block_size)
+        y2 = int((self.x + self.speed * self.dx + self.side) // window.block_size)
         x1 = int((self.y + self.speed * self.dy) // window.block_size)
-        x2 = int((self.y + self.speed * self.dy + window.bul_size) // window.block_size)
-        if (window.map[x1][y1] not in '#d' and window.map[x2][y1] not in '#d'
-                and window.map[x1][y2] not in '#d' and window.map[x2][y2] not in '#d'):
-            return True
-        return False
+        x2 = int((self.y + self.speed * self.dy + self.side) // window.block_size)
+        if (window.map[x1][y1] in '#d' or window.map[x2][y1] in '#d'
+                or window.map[x1][y2] in '#d' or window.map[x2][y2] in '#d'):
+            print('wall')
+            return False
+        for entity in entities:
+            [x1, y1, width, height] = entity.get_rect()
+            x2 = x1 + width
+            y2 = y1 + height
+            if (entity.type == 'hero' and self.name == 'enemy') or (entity.type == 'enemy' and self.name == 'hero'):
+                if ((x2 >= self.x >= x1 and y2 >= self.y >= y1) or
+                        (x2 >= self.x >= x1 and y2 >= self.y + self.side >= y1) or
+                        (x2 >= self.x + self.side >= x1 and y2 >= self.y >= y1) or
+                        (x2 >= self.x + self.side >= x1 and y2 >= self.y + self.side >= y1)):
+                    print(entity.name)
+                    entity.take_damage(self.dmg)
+                    return False
+        return True
 
 
 class Enemy(Entity):
-    def __init__(self, x, y, type, hp, fire_rate):
+    def __init__(self, x, y, name, hp, fire_rate):
         self.hp = hp
         self.speed = 1
         self.fire_rate = int(60 / fire_rate)
@@ -532,15 +550,16 @@ class Enemy(Entity):
         self.height = int(round(1 * window.block_size))
         self.dmg = 15
         self.b_speed = 2
-        self.type = type
+        self.name = name
+        self.type = 'enemy'
         self.col = 'False'
         # print(self.width, self.height, 'Enemy')
         self.x = x
         self.y = y
-        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], 'enemy')
+        super().__init__([self.x, self.y + 0.7 * self.height, self.width, 0.3 * self.height], self.type)
 
     def move(self):
-        if self.type == 'ghost':
+        if self.name == 'ghost':
             destination = hero.get_pos()
             dx = destination[0] - self.x
             dy = destination[1] - self.y
@@ -556,31 +575,24 @@ class Enemy(Entity):
                 dx, dy = 1, 0
             self.col = collision(self, dx, dy)
             col = self.col
-            if col[0] in ['False', 'Wall']:
+            if col in ['False', 'Wall']:
                 self.x += dx
                 self.y += dy
             else:
                 dx = 0
                 dy = 0
             super().move(dx, dy)
-            if len(col) == 2:
-                self.hp -= col[1]
-                if col[1] != 0:
-                    damaged_sound1.play()
-            if self.hp < 1:
-                enemies.remove(self)
-                entities.remove(self)
 
     def atack(self):
         global hp
         if self.cooldown == 0:
             self.cooldown = self.fire_rate
-            if self.type == 'ghost':
+            if self.name == 'ghost':
                 if self.col[0] == 'hero':
                     hp -= 15
                     if hp < 0:
                         hp = 0
-            elif self.type == 'shooter':
+            elif self.name == 'shooter':
                 destination = hero.get_pos()
                 dx = destination[0] - self.x
                 dy = destination[1] - self.y
@@ -600,6 +612,14 @@ class Enemy(Entity):
     def cool(self):
         if self.cooldown > 0:
             self.cooldown -= 1
+
+    def take_damage(self, damage):
+        self.hp -= damage
+        if damage != 0:
+            damaged_sound1.play()
+        if self.hp < 1:
+            enemies.remove(self)
+            entities.remove(self)
 
     def get_pos(self):
         return [self.x, self.y]
@@ -701,14 +721,17 @@ step = 0
 size = width, height = 550, 650
 sprites = {'grass': load_image('grass.png'), 'hero': AnimatedSprite(load_image('skin2-gif.png'), 10, 2, 477, 699),
            'box': load_image('box (2).png'), 'trader': load_image('trader.png'),
-           'black': load_image('black.jpg'), 'enemy': AnimatedSprite(load_image('skin1-gif.png'), 10, 2, 479, 654),
+           'black': load_image('black.jpg'), 'ghost': AnimatedSprite(load_image('skin1-gif.png'), 10, 2, 479, 654),
            'water': load_image('water.png'), 'hp': load_image('hp.png'),
            'bull': load_image('bullet-i.png'), 'open_door': load_image('open_door.png'),
            'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory1.png'),
            'pistol': load_image('pistol.png'), 'auto': load_image('auto.png'),
-           'snipe': load_image('snipe.png'), 'bullet': load_image('bullet.png'),
+           'snipe': load_image('snipe.png'), 'bullet_1': load_image('bullet.png'),
+           'bullet_2': load_image('bullet (1).png'), 'dark': load_image('dark.png'),
            'shotgun': load_image('shotgun.png'), 'chest_inventory': load_image('chest_inventory.png'),
-           'chest': load_image('chest.png')}
+           'chest': load_image('chest.png'), 'shooter': load_image('shooting.png'),
+           'pause_b1': load_image('pause_continue.png'), 'pause_b1_a': load_image('pause_continue_1.png'),
+           'pause_b2': load_image('pause_save.png'), 'pause_b2_a': load_image('pause_save_1.png')}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
@@ -729,6 +752,7 @@ screen = pygame.display.set_mode(size)
 window = Window(size)
 running = True
 menu = True
+pause = False
 grab = False
 inventory_open = False
 chest_open = False
@@ -758,8 +782,6 @@ while running:
                                 elif window.map[i][j] == 's':
                                     window.map[i][j] = '.'
                                     enemies.append(Enemy(x, y, 'shooter', 100, 2))
-                                    print(enemies[-1].x, enemies[-1].y)
-                                    input()
                         entities = [hero, *enemies, *traders]
                     else:
                         print('несуществующая карта')
@@ -769,6 +791,12 @@ while running:
                         a = a[:-1]
                 else:
                     a += chr(event.key)
+        elif pause:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pass
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pause = False
         else:
             # управление героем
             if event.type == pygame.KEYDOWN:
@@ -787,13 +815,24 @@ while running:
                     move_left, move_right, move_up, move_down = False, False, False, False
                 elif event.key == pygame.K_1:
                     active = 0
-                    bullets_count = guns[active].magazin
+                    if type(inventory[active]) is Weapon:
+                        bullets_count = ammo[inventory[active].ammo]
+                    else:
+                        bullets_count = -1
                 elif event.key == pygame.K_2:
                     active = 1
-                    bullets_count = guns[active].magazin
+                    if type(inventory[active]) is Weapon:
+                        bullets_count = ammo[inventory[active].ammo]
+                    else:
+                        bullets_count = -1
                 elif event.key == pygame.K_3:
                     active = 2
-                    bullets_count = guns[active].magazin
+                    if type(inventory[active]) is Weapon:
+                        bullets_count = ammo[inventory[active].ammo]
+                    else:
+                        bullets_count = -1
+                elif event.key == pygame.K_ESCAPE:
+                    pause = True
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
                     move_left = False
@@ -929,45 +968,44 @@ while running:
                         elif grab_from[1] == 'ch' and ch == 1:
                             chests[chest_active].inventory[grab_from[0]], chests[chest_active].inventory[y * 3 + x] = \
                                 chests[chest_active].inventory[y * 3 + x], grab_item
-    # движение героя
-    if move_left:
-        channel1.play(move_sound1)
-        hero.move(-2, 0)
-    elif move_right:
-        channel1.play(move_sound1)
-        hero.move(2, 0)
-    if move_up:
-        channel1.play(move_sound1)
-        hero.move(0, -2)
-    elif move_down:
-        channel1.play(move_sound1)
-        hero.move(0, 2)
-    for bullet in bullets:
-        bullet.move()
-        if not bullet.a:
-            bullets.remove(bullet)
-    if hp < 1:
-        print('Вы проиграли!')
-        terminate()
-    for enemy in enemies:
-        if (window.room_x + window.room_width > enemy.x // window.block_size > window.room_x - 1 and
-                window.room_y + window.room_height > enemy.y // window.block_size > window.room_y - 1):
-            enemy.move()
-            enemy.atack()
-            enemy.cool()
-    screen.fill((0, 0, 0))
-    for i in range(len(entities)):
-        for j in range(len(entities) - 1):
-            if entities[j].get_pos()[1] > entities[j + 1].get_pos()[1]:
-                entities[j], entities[j + 1] = entities[j + 1], entities[j]
-    for weapon in guns:
-        weapon.cool()
-    if step == 5:
-        sprites['hero'].update()
-        sprites['enemy'].update()
-        step = 0
-    else:
-        step += 1
+    if not pause:
+        # движение героя
+        if move_left:
+            channel1.play(move_sound1)
+            hero.move(-2, 0)
+        elif move_right:
+            channel1.play(move_sound1)
+            hero.move(2, 0)
+        if move_up:
+            channel1.play(move_sound1)
+            hero.move(0, -2)
+        elif move_down:
+            channel1.play(move_sound1)
+            hero.move(0, 2)
+        for bullet in bullets:
+            bullet.move()
+        if hp < 1:
+            print('Вы проиграли!')
+            terminate()
+        for enemy in enemies:
+            if (window.room_x + window.room_width > enemy.x // window.block_size > window.room_x - 1 and
+                    window.room_y + window.room_height > enemy.y // window.block_size > window.room_y - 1):
+                enemy.move()
+                enemy.atack()
+                enemy.cool()
+        screen.fill((0, 0, 0))
+        for i in range(len(entities)):
+            for j in range(len(entities) - 1):
+                if entities[j].get_pos()[1] > entities[j + 1].get_pos()[1]:
+                    entities[j], entities[j + 1] = entities[j + 1], entities[j]
+        for weapon in guns:
+            weapon.cool()
+        if step == 5:
+            sprites['hero'].update()
+            sprites['ghost'].update()
+            step = 0
+        else:
+            step += 1
     window.render()
     pygame.display.flip()
     clock.tick(FPS)
