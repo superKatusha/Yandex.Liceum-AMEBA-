@@ -169,6 +169,14 @@ def load():
         for elem in ammo:
             i = tmp.index(elem)
             ammo[elem] = int(tmp[i + 1])
+        active = int(x[2])
+        step = int(x[3])
+        chest_active = x[4]
+        a = x[5]
+        window.block_size = int(x[6])
+        [window.room_x, window.room_y, window.room_width, window.room_height] = list(map(int, x[7]))
+        [hero.x, hero.y] = list(map(int, x[8]))
+        i = int(x[9])
 
 
 def draw_pause():
