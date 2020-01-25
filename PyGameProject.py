@@ -151,7 +151,7 @@ def default():
 
 def load():
     global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from, \
-        grab_item, menu, pause, grab, inventory_open, chest_open
+        grab_item, menu, pause, grab, inventory_open, chest_open, hero
     with open('saves/1.txt') as file:
         x = list(map(lambda x: x.strip(), file.readlines()))
         hp = int(x[0])
@@ -163,10 +163,41 @@ def load():
         step = int(x[3])
         chest_active = x[4]
         a = x[5]
+
         window.block_size = int(x[6])
-        [window.room_x, window.room_y, window.room_width, window.room_height] = list(map(int, x[7]))
-        [hero.x, hero.y] = list(map(int, x[8]))
-        i = int(x[9])
+        [window.room_x, window.room_y, window.room_width, window.room_height] = list(map(int, x[7].split()))
+        tmp = list(map(int, x[8].split()))
+        hero = Hero(tmp[0], tmp[1])
+        n = int(x[9])
+        cnt = 9
+        for i in range(n):
+            cnt += 1
+            tmp = x[cnt].split()
+            bullets.append(Bullet([int(tmp[0]), int(tmp[1])], tmp[2], [int(tmp[3]), int(tmp[4])], int(tmp[5]), int(tmp[6])))
+        cnt += 1
+        n = int(x[cnt])
+        for i in range(n):
+            cnt += 1
+            tmp = x[cnt].split()
+            enemies.append(Enemy(int(tmp[0]), int(tmp[1]), tmp[2], int(tmp[3]), int(tmp[4])))
+            enemies[-1].cooldown = int(tmp[5])
+        cnt += 1
+        n = int(x[cnt])
+        for i in range(n):
+            cnt += 1
+            tmp = x[cnt].split()
+            traders.append(Trader(int(tmp[0]), int(tmp[1])))
+        cnt += 1
+        n = int(x[cnt])
+        for i in range(n):
+            cnt += 1
+            tmp = x[cnt].split()
+            if tmp[0] == 'Weapon':
+                inventory.append(guns[int(tmp[1])])
+            elif tmp[0] == 'Staff':
+                inventory.append(Staff(tmp[1], int(tmp[2])))
+            else:
+                inventory.append(0)
 
 
 def draw_pause():
@@ -440,9 +471,11 @@ class Hero(Entity):
             self.height = int(round(1 * window.block_size))
             self.x = j * window.block_size + window.block_size - self.width // 2
             self.y = i * window.block_size
-        # else:
-        #     self.x = cords[0]
-        #     self.y = cords[1]
+        else:
+            self.x = cords[0]
+            self.y = cords[1]
+            self.width = int(round(0.7 * window.block_size))
+            self.height = int(round(1 * window.block_size))
         self.name = 'hero'
         super().__init__([self.x, self.y + 0.5 * self.height, self.width, 0.5 * self.height], 'hero')
 
@@ -824,6 +857,7 @@ inventory_open = False
 chest_open = False
 move_left, move_right, move_up, move_down = False, False, False, False
 clock = pygame.time.Clock()
+menu = False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
