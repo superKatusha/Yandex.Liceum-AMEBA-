@@ -148,7 +148,8 @@ def save():
 
 def default():
     global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from,\
-        grab_item, menu, pause, grab, inventory_open, chest_open, difficulty, money
+        grab_item, menu, pause, grab, inventory_open, chest_open, difficulty, money, move_up, move_down, move_right,\
+        move_left, trade_denied, settings, trade
     a = ''
     difficulty = 1
     hp = 100
@@ -161,14 +162,18 @@ def default():
     enemies = []
     traders = []
     entities = []
-    inventory = [guns[0], guns[1], guns[2], guns[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    inventory = [guns[0], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     x, y = 0, 0
     grab_from, grab_item = 0, 0
+    trade = False
     menu = True
     pause = False
+    settings = False
     grab = False
+    trade_denied = False
     inventory_open = False
     chest_open = False
+    move_left, move_right, move_up, move_down = False, False, False, False
 
 
 def load():
@@ -291,6 +296,8 @@ def draw_trade(x, y):
             screen.blit(load_image('trader_list_3.png'), [x + 10, y + 87])
         elif y + 128 < cords[1] < y + 169:
             screen.blit(load_image('trader_list_4.png'), [x + 10, y + 128])
+    if trade_denied:
+        screen.blit(load_image('trade_denied.png'), [x - 280, y + 150])
 
 
 def collision(ent, x, y):
@@ -355,6 +362,29 @@ def collision(ent, x, y):
     return 'False'
 
 
+def map_init(a):
+    global menu, hero, entities
+    if os.path.exists(os.path.join('maps', a + '.txt')):
+        window.input_map(a + '.txt')
+        menu = False
+        hero = Hero()  # определение героя + # определение комнаты
+        print(window.map_size)
+        for i in range(window.map_size[1]):
+            for j in range(window.map_size[0]):
+                x = j * window.block_size + (window.block_size - hero.width) // 2
+                y = i * window.block_size
+                if window.map[i][j] == 'T':
+                    window.map[i][j] = '.'
+                    traders.append(Trader(x, y))
+                elif window.map[i][j] == 'g':
+                    window.map[i][j] = '.'
+                    enemies.append(Enemy(x, y, 'ghost', 100, 2))
+                elif window.map[i][j] == 's':
+                    window.map[i][j] = '.'
+                    enemies.append(Enemy(x, y, 'shooter', 100, 2))
+        entities = [hero, *enemies, *traders]
+
+
 class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         self.frames = []
@@ -390,15 +420,20 @@ class Window:
         self.dx, self.dy = 0, 0
 
     def input_map(self, name):
+        global chests
         self.map = []
         fullname = os.path.join('maps', name)
         with open(fullname, 'r') as in_file:
             a = in_file.readlines()
-        for i in range(len(a)):
-            if i == 0:
-                self.map_size = list(map(int, a[i].split()))
-            else:
-                self.map.append(list(a[i].rstrip().ljust(self.map_size[0], '.')))
+            for i in range(len(a)):
+                if i == 0:
+                    self.map_size = list(map(int, a[0].split()))
+                elif i <= self.map_size[1]:
+                    self.map.append(list(a[i].rstrip().ljust(self.map_size[0], '.')))
+                else:
+                    x = a[i].split()
+                    chests[x[0] + ' ' + x[1]] = Chest(x[2])
+
 
     def render(self):
         if menu:
@@ -451,6 +486,8 @@ class Window:
                         screen.blit(pygame.transform.scale(sprites['chest'],
                                                            (self.x, self.x)),
                                     [self.dx + j * self.x, self.dy + i * self.x])
+            for sprite in tmp_sprites:
+                screen.blit(sprite[2].image, [sprite[0], sprite[1]])
             for entity in entities:
                 # отрисовка всех существ на карте
                 if ((self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
@@ -478,7 +515,7 @@ class Window:
                                                                 int(entity.height * self.scale))),
                                         [self.dx + entity.x, self.dy + entity.y])
                             if trade and entity == traders[trader_active]:
-                                draw_trade(entity.type, self.dx + entity.x + entity.width + 5, self.dy + entity.y - 190)
+                                draw_trade(self.dx + entity.x + entity.width + 5, self.dy + entity.y - 190)
             for bullet in bullets:
                 # отрисовка пуль
                 if bullet.name == 'enemy':
@@ -717,8 +754,8 @@ class Bullet(Window):
         y2 = int((self.x + self.speed * self.dx + self.side) // window.block_size)
         x1 = int((self.y + self.speed * self.dy) // window.block_size)
         x2 = int((self.y + self.speed * self.dy + self.side) // window.block_size)
-        if (window.map[x1][y1] in '#d' or window.map[x2][y1] in '#d'
-                or window.map[x1][y2] in '#d' or window.map[x2][y2] in '#d'):
+        if (window.map[x1][y1] in '#Dd' or window.map[x2][y1] in '#Dd'
+                or window.map[x1][y2] in '#Dd' or window.map[x2][y2] in '#Dd'):
             return False
         for entity in entities:
             x1, y1, width, height = entity.x, entity.y, entity.width, entity.height
@@ -809,8 +846,9 @@ class Enemy(Entity):
                         dx, dy = math.sin(k), math.cos(k)
                 elif dx == 0 and dy > 0:
                     dx, dy = 0, 1
-                elif dy == 0 and dx > 0:
+                else:
                     dx, dy = 1, 0
+                print(dx, dy)
                 bullets.append(Bullet([dx, dy], 'enemy', [self.x + 0.5 * window.block_size,
                                                           self.y + 0.5 * window.block_size], self.b_speed, self.dmg))
 
@@ -827,6 +865,8 @@ class Enemy(Entity):
             damaged_sound1.play()
         if self.hp < 1:
             money += 1
+            tmp_sprites.append([window.dx + self.x, self.y_pos - window.block_size + window.dy,
+                                AnimatedSprite(load_image('coin-gif.png'), 10, 6, 20, 20), 60])
             enemies.remove(self)
             entities.remove(self)
 
@@ -921,8 +961,10 @@ money = 10
 guns = [Weapon(2, 25, 25, 3, 'pistol', '9mm'),
         Weapon(3, 40, 30, 5, 'auto', '5.56mm'),
         Weapon(6, 100, 5, 0.7, 'snipe', '7.62mm'),
-        Weapon(3, 30, 5, 1, 'shotgun', '12mm', 3)]
+        Weapon(3, 50, 5, 1, 'shotgun', '12mm', 3)]
 ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10, '12mm': 10}
+chests = {}
+lifes = 2
 active = 0
 step = 0
 size = width, height = 550, 650
@@ -946,7 +988,6 @@ damage_sound = pygame.mixer.Sound('sounds/damage.wav')
 move_sound1 = pygame.mixer.Sound('sounds/move_hero1.wav')
 cash = pygame.mixer.Sound('sounds/purchase.wav')
 chest_types = {'starter': [[guns[0], 25], [guns[1], 10], [guns[2], 2], [guns[3], 1]]}
-chests = {'16 4': Chest('starter')}
 chest_active = ''
 trader_active = 0
 tmp_sprites = []
@@ -954,7 +995,7 @@ bullets = []
 enemies = []
 traders = []
 entities = []
-inventory = [guns[0], guns[1], guns[2], guns[3], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+inventory = [guns[0], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 x, y = 0, 0
 grab_from, grab_item = 0, 0
 screen = pygame.display.set_mode(size)
@@ -962,9 +1003,11 @@ window = Window(size)
 running = True
 trade = False
 menu = True
+death = False
 pause = False
 settings = False
 grab = False
+trade_denied = False
 inventory_open = False
 chest_open = False
 move_left, move_right, move_up, move_down = False, False, False, False
@@ -979,25 +1022,7 @@ while running:
                 a = 'arena'
                 if 129 < cords[0] < 420:
                     if 161 < cords[1] < 228:
-                        if os.path.exists(os.path.join('maps', a + '.txt')):
-                            window.input_map(a + '.txt')
-                            menu = False
-                            hero = Hero()  # определение героя + # определение комнаты
-                            print(window.map_size)
-                            for i in range(window.map_size[1]):
-                                for j in range(window.map_size[0]):
-                                    x = j * window.block_size + (window.block_size - hero.width) // 2
-                                    y = i * window.block_size
-                                    if window.map[i][j] == 'T':
-                                        window.map[i][j] = '.'
-                                        traders.append(Trader(x, y))
-                                    elif window.map[i][j] == 'g':
-                                        window.map[i][j] = '.'
-                                        enemies.append(Enemy(x, y, 'ghost', 100, 2))
-                                    elif window.map[i][j] == 's':
-                                        window.map[i][j] = '.'
-                                        enemies.append(Enemy(x, y, 'shooter', 100, 2))
-                            entities = [hero, *enemies, *traders]
+                        map_init(a)
                     elif 298 < cords[1] < 365:
                         menu = False
                         load()
@@ -1029,7 +1054,7 @@ while running:
                 if 129 < cords[0] < 420:
                     if 200 < cords[1] < 267:
                         pause = False
-                    elif 367 < cords[1] < 434:
+                    elif 272 < cords[1] < 339:
                         save()
                         pause = False
                         menu = True
@@ -1156,21 +1181,29 @@ while running:
                                     money -= 5
                                     ammo['9mm'] += 35
                                     cash.play()
+                                else:
+                                    trade_denied = True
                             elif y + 47 < cords[1] < y + 87:
                                 if money >= 5:
                                     money -= 5
                                     ammo['5.56mm'] += 25
                                     cash.play()
+                                else:
+                                    trade_denied = True
                             elif y + 87 < cords[1] < y + 128:
                                 if money >= 5:
                                     money -= 5
                                     ammo['12mm'] += 15
                                     cash.play()
+                                else:
+                                    trade_denied = True
                             elif y + 128 < cords[1] < y + 169:
                                 if money >= 5:
                                     money -= 5
                                     ammo['7.62mm'] += 10
                                     cash.play()
+                                else:
+                                    trade_denied = True
                     # взаимодействие с сундуком
                     elif window.map[map_y][map_x] == 'c':
                         if (abs(hero.x // window.block_size - map_x) < 3 and
@@ -1179,8 +1212,8 @@ while running:
                             chest_open = True
                             chest_active = '{} {}'.format(map_x, map_y)
                     elif trader_active != -1:
-                        if (abs(hero.x - traders[trader_active].x) <= 2 * window.block_size and
-                                abs(hero.y - traders[trader_active].y) <= 2 * window.block_size):
+                        if (abs(hero.x - traders[trader_active].x) <= window.block_size and
+                                abs(hero.y - traders[trader_active].y) <= window.block_size):
                             trade = True
                     # стрельба
                     elif type(inventory[active]) is Weapon:
@@ -1245,9 +1278,10 @@ while running:
                         elif grab_from[1] == 'ch' and ch == 1:
                             chests[chest_active].inventory[grab_from[0]], chests[chest_active].inventory[y * 3 + x] = \
                                 chests[chest_active].inventory[y * 3 + x], grab_item
-    if not pause:
+    if not pause and not death:
         if move_left or move_right or move_down or move_up:
             trade = False
+            trade_denied = False
         # движение героя
         if move_left:
             channel1.play(move_sound1)
@@ -1264,8 +1298,10 @@ while running:
         for bullet in bullets:
             bullet.move()
         if hp < 1:
-            print('Вы проиграли!')
-            terminate()
+            lifes -= 1
+            default()
+            death = True
+            tmp_sprites.append(0, 0, AnimatedSprite(load_image('fon-gif.png')), 10, 6, 550, 650)
         for enemy in enemies:
             if (window.room_x + window.room_width > enemy.x // window.block_size > window.room_x - 1 and
                     window.room_y + window.room_height > enemy.y // window.block_size > window.room_y - 1):
@@ -1279,6 +1315,12 @@ while running:
                     entities[j], entities[j + 1] = entities[j + 1], entities[j]
         for weapon in guns:
             weapon.cool()
+        for sprite in tmp_sprites:
+            if type(sprite[2]) is AnimatedSprite:
+                sprite[2].update()
+            sprite[3] -= 1
+            if sprite[3] == 0:
+                tmp_sprites.remove(sprite)
         if step == 5:
             sprites['hero'].update()
             sprites['ghost'].update()
