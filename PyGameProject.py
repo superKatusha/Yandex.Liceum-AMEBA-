@@ -64,15 +64,42 @@ def draw_inventory():
     screen.blit(pygame.transform.scale(sprites['inventory'],
                                        (150, 650)),
                 [400, 0])
-    screen.blit(pygame.transform.scale(sprites['coin'], (30, 30)), [500, 500])
-    intro_text = [str(money)]
+    screen.blit(pygame.transform.scale(sprites['coin'], (30, 30)), [500, 550])
+    screen.blit(load_image('9mm.png'), [500, 350])
+    screen.blit(load_image('5.56mm.png'), [500, 400])
+    screen.blit(load_image('12mm.png'), [500, 450])
+    screen.blit(load_image('7.62mm.png'), [500, 500])
     font = pygame.font.Font(None, 35)
-    text_coord = [485, 505]
+    intro_text = [str(ammo['9mm'])]
+    text_coord = [485, 355]
     for line in intro_text:
         string_rendered = font.render(line, 1, (0, 0, 0))
         line_rect = string_rendered.get_rect()
         screen.blit(string_rendered, [text_coord[0] - line_rect[2], text_coord[1]])
-        text_coord[1] += line_rect[3] + 30
+    text_coord = [485, 405]
+    intro_text = [str(ammo['5.56mm'])]
+    for line in intro_text:
+        string_rendered = font.render(line, 1, (0, 0, 0))
+        line_rect = string_rendered.get_rect()
+        screen.blit(string_rendered, [text_coord[0] - line_rect[2], text_coord[1]])
+    text_coord = [485, 455]
+    intro_text = [str(ammo['12mm'])]
+    for line in intro_text:
+        string_rendered = font.render(line, 1, (0, 0, 0))
+        line_rect = string_rendered.get_rect()
+        screen.blit(string_rendered, [text_coord[0] - line_rect[2], text_coord[1]])
+    text_coord = [485, 505]
+    intro_text = [str(ammo['7.62mm'])]
+    for line in intro_text:
+        string_rendered = font.render(line, 1, (0, 0, 0))
+        line_rect = string_rendered.get_rect()
+        screen.blit(string_rendered, [text_coord[0] - line_rect[2], text_coord[1]])
+    intro_text = [str(money)]
+    text_coord = [485, 555]
+    for line in intro_text:
+        string_rendered = font.render(line, 1, (0, 0, 0))
+        line_rect = string_rendered.get_rect()
+        screen.blit(string_rendered, [text_coord[0] - line_rect[2], text_coord[1]])
     for i in range(len(inventory)):
         if inventory[i] != 0:
             if i < 3:
@@ -241,12 +268,15 @@ def draw_pause():
     cords = pygame.mouse.get_pos()
     screen.blit(load_image('dark.png'), [0, 0])
     screen.blit(load_image('pause_continue.png'), [129, 200])
-    screen.blit(load_image('pause_save.png'), [129, 272])
+    screen.blit(load_image('pause_restart.png'), [129, 272])
+    screen.blit(load_image('pause_save.png'), [129, 344])
     if 129 < cords[0] < 420:
         if 200 < cords[1] < 267:
             screen.blit(load_image('pause_continue_a.png'), [129, 200])
         elif 272 < cords[1] < 339:
-            screen.blit(load_image('pause_save_a.png'), [129, 272])
+            screen.blit(load_image('pause_restart_a.png'), [129, 272])
+        elif 344 < cords[1] < 411:
+            screen.blit(load_image('pause_save_a.png'), [129, 344])
 
 
 def draw_settings():
@@ -279,6 +309,43 @@ def draw_settings():
         screen.blit(load_image('back_to_manu_a.png'), [129, 367])
     else:
         screen.blit(load_image('back_to_manu.png'), [129, 367])
+
+
+def draw_records():
+    screen.blit(sprites['fon'], [0, 0])
+    screen.blit(load_image('pergament.png'), [25, 25])
+    with open('records/records.txt') as file:
+        a = file.readlines()
+    if len(a) > 5:
+        a = a[:5]
+    font = pygame.font.Font(None, 35)
+    intro_text = list(map(lambda x: x.strip(), a))
+    text_coord = [100, 100]
+    for line in intro_text:
+        string_rendered = font.render(line, 1, (0, 0, 0))
+        line_rect = string_rendered.get_rect()
+        screen.blit(string_rendered, [text_coord[0], text_coord[1]])
+        text_coord[1] += line_rect[3] + 30
+    screen.blit(load_image('back_to_manu.png'), [129, 541])
+    cords = pygame.mouse.get_pos()
+    if 129 < cords[0] < 420:
+        if 541 < cords[1] < 608:
+            screen.blit(load_image('back_to_manu_a.png'), [129, 541])
+    if name_input:
+        intro_text = ['Введите имя']
+        text_coord = [100, 400]
+        for line in intro_text:
+            string_rendered = font.render(line, 1, (0, 0, 0))
+            line_rect = string_rendered.get_rect()
+            screen.blit(string_rendered, [text_coord[0], text_coord[1]])
+            text_coord[1] += line_rect[3] + 30
+        intro_text = [name + ' ' + str(points)]
+        text_coord = [100, 450]
+        for line in intro_text:
+            string_rendered = font.render(line, 1, (0, 0, 0))
+            line_rect = string_rendered.get_rect()
+            screen.blit(string_rendered, [text_coord[0], text_coord[1]])
+            text_coord[1] += line_rect[3] + 30
 
 
 def draw_trade(x, y):
@@ -381,7 +448,7 @@ def map_init(a):
                     enemies.append(Enemy(x, y, 'shooter', 100, 2))
                 elif window.map[i][j] == 'B':
                     window.map[i][j] = '.'
-                    enemies.append(Enemy(x, y, 'boss', 1000, 1))
+                    enemies.append(Enemy(x, y, 'boss', 1, 1))
         entities = [hero, *enemies, *traders]
         tmp_sprites.append([0, 0, sprites['fon-gif1'], 60])
 
@@ -443,6 +510,9 @@ class Window:
         elif settings:
             # настройки
             draw_settings()
+        elif table_lid:
+            # таблица рекордов
+            draw_records()
         else:
             indicators()  # отрисовка индикаторов (хп, патроны и т.д.)
             en = []
@@ -596,7 +666,7 @@ class Hero(Entity):
             self.room_init(i, j)
             self.width = int(round(0.7 * window.block_size))
             self.height = int(round(1 * window.block_size))
-            self.x = j * window.block_size + window.block_size - self.width // 2
+            self.x = j * window.block_size + (window.block_size - self.width) // 2
             self.y = i * window.block_size
         else:
             self.x = cords[0]
@@ -789,6 +859,7 @@ class Enemy(Entity):
         self.name = name
         self.type = 'enemy'
         self.col = 'False'
+        self.step = 0
         # print(self.width, self.height, 'Enemy')
         self.x = x
         self.y = y
@@ -796,7 +867,7 @@ class Enemy(Entity):
 
     # перемещение врагов
     def move(self):
-        if self.name == 'ghost':
+        if self.name in ['ghost', 'boss']:
             destination = hero.get_pos()
             dx = destination[0] - self.x
             dy = destination[1] - self.y
@@ -811,12 +882,20 @@ class Enemy(Entity):
             elif dy == 0 and dx > 0:
                 dx, dy = self.speed, 0
             self.col = 'False'
-            col = collision(self, dx, 0)
-            if col not in ['False', 'Wall']:
-                dx = 0
-            col1 = collision(self, 0, dy)
-            if col1 not in ['False', 'Wall']:
-                dy = 0
+            if self.name == 'ghost':
+                col = collision(self, dx, 0)
+                if col not in ['False', 'Wall']:
+                    dx = 0
+                col1 = collision(self, 0, dy)
+                if col1 not in ['False', 'Wall']:
+                    dy = 0
+            else:
+                col = collision(self, dx, 0)
+                if col not in ['False']:
+                    dx = 0
+                col1 = collision(self, 0, dy)
+                if col1 not in ['False']:
+                    dy = 0
             if dx == 0 and dy != 0:
                 dy = int(dy / abs(dy) * self.speed)
             elif dx != 0 and dy == 0:
@@ -851,9 +930,57 @@ class Enemy(Entity):
                     dx, dy = 0, 1
                 else:
                     dx, dy = 1, 0
-                print(dx, dy)
                 bullets.append(Bullet([dx, dy], 'enemy', [self.x + 0.5 * window.block_size,
                                                           self.y + 0.5 * window.block_size], self.b_speed, self.dmg))
+            elif self.name == 'boss':
+                print(self.step)
+                if self.step < 6:
+                    self.cooldown = 0
+                if self.step == 1 or self.step == 6:
+                    destination = [hero.x_pos, hero.y_pos]
+                    cords = [self.x + 0.5 * window.block_size, self.y + 0.5 * window.block_size]
+                    dx = destination[0] - cords[0]
+                    dy = destination[1] - cords[1]
+                    if dy != 0:
+                        k = math.atan(dx / dy)
+                        if destination[1] - cords[1] < 0:
+                            dx, dy = -math.sin(k), -math.cos(k)
+                        else:
+                            dx, dy = math.sin(k), math.cos(k)
+                    elif dy == 0:
+                        dx, dy = 1, 0
+                    bullets.append(Bullet([dx, dy], 'enemy', cords, self.b_speed, self.dmg))
+                    if destination[1] - cords[1] < 0:
+                        dx, dy = -math.sin(k + math.pi / 12), -math.cos(k + math.pi / 12)
+                    else:
+                        dx, dy = math.sin(k + math.pi / 12), math.cos(k + math.pi / 12)
+                    bullets.append(Bullet([dx, dy], 'enemy', cords, self.b_speed, self.dmg))
+                    if destination[1] - cords[1] < 0:
+                        dx, dy = -math.sin(k - math.pi / 12), -math.cos(k - math.pi / 12)
+                    else:
+                        dx, dy = math.sin(k - math.pi / 12), math.cos(k - math.pi / 12)
+                    bullets.append(Bullet([dx, dy], 'enemy', cords, self.b_speed, self.dmg))
+                elif self.step == 7:
+                    destination = [hero.x_pos, hero.y_pos]
+                    cords = [self.x + 0.5 * window.block_size, self.y + 0.5 * window.block_size]
+                    dx = destination[0] - cords[0]
+                    dy = destination[1] - cords[1]
+                    if dy != 0:
+                        k = math.atan(dx / dy)
+                        if destination[1] - cords[1] < 0:
+                            dx, dy = -math.sin(k), -math.cos(k)
+                        else:
+                            dx, dy = math.sin(k), math.cos(k)
+                    elif dy == 0:
+                        dx, dy = 1, 0
+                    for i in range(24):
+                        if destination[1] - cords[1] < 0:
+                            dx, dy = -math.sin(k + i * math.pi / 12), -math.cos(k + i * math.pi / 12)
+                        else:
+                            dx, dy = math.sin(k + i * math.pi / 12), math.cos(k + i * math.pi / 12)
+                        bullets.append(Bullet([dx, dy], 'enemy', cords, self.b_speed, self.dmg))
+                    self.step = 0
+                self.step += 1
 
     # задержка атаки
     def cool(self):
@@ -862,11 +989,17 @@ class Enemy(Entity):
 
     # получение урона
     def take_damage(self, damage):
-        global money
+        global money, victory, step, level_points
         self.hp -= damage
         if damage != 0:
             damaged_sound1.play()
         if self.hp < 1:
+            if self.name == 'boss':
+                level_points += 1000
+                victory = True
+                step = 0
+            else:
+                level_points += 200
             money += 1
             tmp_sprites.append([window.dx + self.x, self.y_pos - window.block_size + window.dy,
                                 AnimatedSprite(load_image('coin-gif.png'), 10, 6, 20, 20), 60])
@@ -964,7 +1097,7 @@ money = 10
 guns = [Weapon(2, 25, 25, 3, 'pistol', '9mm'),
         Weapon(3, 40, 30, 5, 'auto', '5.56mm'),
         Weapon(6, 100, 5, 0.7, 'snipe', '7.62mm'),
-        Weapon(3, 50, 5, 1, 'shotgun', '12mm', 3)]
+        Weapon(3, 40, 5, 1, 'shotgun', '12mm', 3)]
 ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10, '12mm': 10}
 chests = {}
 lifes = 3
@@ -976,7 +1109,7 @@ size = width, height = 550, 650
 sprites = {'grass': load_image('grass.png'), 'hero': AnimatedSprite(load_image('skin2-gif.png'), 10, 2, 477, 699),
            'box': load_image('box (2).png'), 'trader': load_image('trader.png'),
            'black': load_image('black.jpg'), 'ghost': AnimatedSprite(load_image('skin1-gif.png'), 10, 2, 479, 654),
-           'water': load_image('water.png'), 'hp': load_image('hp.png'),
+           'hp': load_image('hp.png'), 'boss': load_image('boss.png'),
            'bull': load_image('bullet-i.png'), 'open_door': load_image('open_door.png'),
            'closed_door': load_image('closed_door.png'), 'inventory': load_image('inventory1.png'),
            'pistol': load_image('pistol.png'), 'auto': load_image('auto.png'), 'coin': load_image('coin.png'),
@@ -985,7 +1118,8 @@ sprites = {'grass': load_image('grass.png'), 'hero': AnimatedSprite(load_image('
            'shotgun': load_image('shotgun.png'), 'chest_inventory': load_image('chest_inventory.png'),
            'chest': load_image('chest.png'), 'shooter': load_image('shooting.png'),
            'fon-gif': AnimatedSprite(load_image('fon-gif.png'), 10, 6, 550, 650),
-           'fon-gif1': AnimatedSprite(load_image('fon-gif(1).png'), 10, 6, 550, 650)}
+           'fon-gif1': AnimatedSprite(load_image('fon-gif(1).png'), 10, 6, 550, 650),
+           }
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
@@ -997,6 +1131,7 @@ cash = pygame.mixer.Sound('sounds/purchase.wav')
 death_sound = pygame.mixer.Sound('sounds/death.wav')
 chest_types = {'starter': [[guns[0], 25], [guns[1], 10], [guns[2], 2], [guns[3], 1]]}
 chest_active = ''
+name = ''
 trader_active = 0
 levels = ['arena', 'levelbykvadron']
 current_level = 0
@@ -1013,10 +1148,13 @@ window = Window(size)
 running = True
 trade = False
 menu = True
+victory = False
 death = False
 pause = False
+table_lid = False
 settings = False
 grab = False
+name_input = False
 trade_denied = False
 inventory_open = False
 chest_open = False
@@ -1065,12 +1203,44 @@ while running:
                     if 200 < cords[1] < 267:
                         pause = False
                     elif 272 < cords[1] < 339:
+                        lifes -= 1
+                        death = True
+                        pause = False
+                        death_sound.play()
+                        step = 0
+                    elif 344 < cords[1] < 411:
                         save()
                         pause = False
                         menu = True
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pause = False
+        elif table_lid:
+            if event.type == pygame.KEYDOWN:
+                if event.key == 13:
+                    with open('records/records.txt') as file:
+                        x = list(map(lambda x: x.split(), file.readlines()))
+                    for elem in x:
+                        elem[1] = int(elem[1])
+                    x.append([name, points])
+                    x = sorted(x, key=lambda player: player[1])
+                    with open('records/records.txt', 'w') as file:
+                        for elem in x:
+                            file.write(elem[0] + ' ' + str(elem[1]) + '\n')
+                    points = 0
+                    name = ''
+                    name_input = False
+                elif event.key == pygame.K_BACKSPACE:
+                    if len(name) != 0:
+                        name = name[:-1]
+                else:
+                    name += chr(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                cords = list(event.pos)
+                if 129 < cords[0] < 420:
+                    if 541 < cords[1] < 608:
+                        table_lid = False
+                        menu = True
         else:
             # управление героем
             if event.type == pygame.KEYDOWN:
@@ -1287,7 +1457,7 @@ while running:
                         elif grab_from[1] == 'ch' and ch == 1:
                             chests[chest_active].inventory[grab_from[0]], chests[chest_active].inventory[y * 3 + x] = \
                                 chests[chest_active].inventory[y * 3 + x], grab_item
-    if not pause and not death:
+    if not pause and not death and not victory:
         if move_left or move_right or move_down or move_up:
             trade = False
             trade_denied = False
@@ -1366,6 +1536,40 @@ while running:
                 lifes = 3
                 current_level = 0
                 points = 0
+    if victory:
+        step += 1
+        if step == 1:
+            tmp_sprites.append([0, 0, sprites['fon-gif'], 60])
+        if step == 60:
+            tmp_sprites.append([0, 0, load_image('black.jpg'), 180])
+            if lifes == 3:
+                tmp_sprites.append([125, 225, load_image('3lifes.png'), 178])
+            elif lifes == 2:
+                tmp_sprites.append([125, 225, load_image('2lifes.png'), 178])
+            elif lifes == 1:
+                tmp_sprites.append([125, 225, load_image('1lifes.png'), 178])
+            else:
+                tmp_sprites.append([125, 225, load_image('0lifes.png'), 178])
+            tmp_sprites.append([0, 0, sprites['fon-gif1'], 60])
+        if step == 179:
+            tmp_sprites.append([0, 0, sprites['fon-gif'], 60])
+        for sprite in tmp_sprites:
+            if type(sprite[2]) is AnimatedSprite:
+                sprite[2].update()
+            sprite[3] -= 1
+            if sprite[3] == 0:
+                tmp_sprites.remove(sprite)
+        if len(tmp_sprites) == 0:
+            points += level_points
+            default()
+            victory = False
+            if current_level == 1:
+                current_level = 0
+                table_lid = True
+                name_input = True
+            else:
+                current_level += 1
+                map_init(levels[current_level])
     window.render()
     pygame.display.flip()
     clock.tick(FPS)
