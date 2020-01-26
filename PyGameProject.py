@@ -447,7 +447,6 @@ def map_init(a):
         window.input_map(a + '.txt')
         menu = False
         hero = Hero()  # определение героя + # определение комнаты
-        print(window.map_size)
         for i in range(window.map_size[1]):
             for j in range(window.map_size[0]):
                 x = j * window.block_size + (window.block_size - hero.width) // 2
@@ -1573,7 +1572,7 @@ while running:
         if len(tmp_sprites) == 0:
             default()
             if lifes != 0:
-                map_init(a)
+                map_init(levels[current_level])
             else:
                 menu = True
                 lifes = 3
