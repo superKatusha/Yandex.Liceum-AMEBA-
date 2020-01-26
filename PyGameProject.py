@@ -17,15 +17,6 @@ def terminate():
     sys.exit()
 
 
-def press_detect(pos, button):
-    x = pos[0]
-    y = pos[1]
-    if button[0] <= x <= button[0] + button[2] and button[1] <= y <= button[1] + button[3]:
-        return True
-    else:
-        return False
-
-
 def start_screen():
     fon = load_image('fon1.jpg')
     cords = pygame.mouse.get_pos()
@@ -143,14 +134,16 @@ def save():
                 tmp = ['Staff', i.name, str(i.ammo)]
             file.write(' '.join(tmp) + '\n')
         file.write(str(money))
+        file.write(str(lifes))
+        file.write(str(points))
+        file.write(str(level_points))
         default()
 
 
 def default():
     global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from,\
         grab_item, menu, pause, grab, inventory_open, chest_open, difficulty, money, move_up, move_down, move_right,\
-        move_left, trade_denied, settings, trade
-    a = ''
+        move_left, trade_denied, settings, trade, death
     difficulty = 1
     hp = 100
     money = 10
@@ -166,10 +159,11 @@ def default():
     x, y = 0, 0
     grab_from, grab_item = 0, 0
     trade = False
-    menu = True
+    menu = False
     pause = False
     settings = False
     grab = False
+    death = False
     trade_denied = False
     inventory_open = False
     chest_open = False
@@ -178,7 +172,7 @@ def default():
 
 def load():
     global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from, \
-        grab_item, menu, pause, grab, inventory_open, chest_open, hero, difficulty, money
+        grab_item, menu, pause, grab, inventory_open, chest_open, hero, difficulty, money, lifes, points, level_points
     with open('saves/1.txt') as file:
         x = list(map(lambda x: x.strip(), file.readlines()))
         difficulty = int(x[0])
@@ -237,6 +231,9 @@ def load():
             else:
                 inventory.append(0)
         money = int(x[cnt + 1])
+        lifes = int(x[cnt + 2])
+        points = int(x[cnt + 3])
+        level_points = int(x[cnt +4])
         entities = [hero, *enemies, *traders]
 
 
@@ -382,7 +379,11 @@ def map_init(a):
                 elif window.map[i][j] == 's':
                     window.map[i][j] = '.'
                     enemies.append(Enemy(x, y, 'shooter', 100, 2))
+                elif window.map[i][j] == 'B':
+                    window.map[i][j] = '.'
+                    enemies.append(Enemy(x, y, 'boss', 1000, 1))
         entities = [hero, *enemies, *traders]
+        tmp_sprites.append([0, 0, sprites['fon-gif1'], 60])
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -429,7 +430,7 @@ class Window:
                 if i == 0:
                     self.map_size = list(map(int, a[0].split()))
                 elif i <= self.map_size[1]:
-                    self.map.append(list(a[i].rstrip().ljust(self.map_size[0], '.')))
+                    self.map.append(list(a[i].rstrip()))
                 else:
                     x = a[i].split()
                     chests[x[0] + ' ' + x[1]] = Chest(x[2])
@@ -486,8 +487,6 @@ class Window:
                         screen.blit(pygame.transform.scale(sprites['chest'],
                                                            (self.x, self.x)),
                                     [self.dx + j * self.x, self.dy + i * self.x])
-            for sprite in tmp_sprites:
-                screen.blit(sprite[2].image, [sprite[0], sprite[1]])
             for entity in entities:
                 # отрисовка всех существ на карте
                 if ((self.room_x + self.room_width > entity.x // window.block_size > self.room_x - 1 and
@@ -515,7 +514,7 @@ class Window:
                                                                 int(entity.height * self.scale))),
                                         [self.dx + entity.x, self.dy + entity.y])
                             if trade and entity == traders[trader_active]:
-                                draw_trade(self.dx + entity.x + entity.width + 5, self.dy + entity.y - 190)
+                                draw_trade(self.dx + entity.x + 5, self.dy + entity.y - 190)
             for bullet in bullets:
                 # отрисовка пуль
                 if bullet.name == 'enemy':
@@ -531,13 +530,17 @@ class Window:
             if pause:
                 # отрисрвка окна паузы
                 draw_pause()
+            for sprite in tmp_sprites:
+                if type(sprite[2]) is AnimatedSprite:
+                    screen.blit(sprite[2].image, [sprite[0], sprite[1]])
+                else:
+                    screen.blit(sprite[2], [sprite[0], sprite[1]])
 
     def set_room(self, *rect):
         # получение координат границ текущей комнаты и расчёты координат для её отрисовки
         [self.room_x, self.room_y, self.room_width, self.room_height] = rect
         if self.block_size == 0:
             self.block_size = 35
-            print(1)
         self.scale = 35 / self.block_size
         self.x = int(self.block_size * self.scale)
         self.dy = int(- self.room_y * self.block_size + (self.height - self.room_height * self.block_size) / 3)
@@ -776,7 +779,7 @@ class Enemy(Entity):
         self.hp = hp
         self.speed = 1
         if difficulty == 2:
-            self.speed = 2
+            self.speed = 1.5
         self.fire_rate = int(60 / fire_rate)
         self.cooldown = self.fire_rate
         self.width = int(round(0.7 * window.block_size))
@@ -964,9 +967,11 @@ guns = [Weapon(2, 25, 25, 3, 'pistol', '9mm'),
         Weapon(3, 50, 5, 1, 'shotgun', '12mm', 3)]
 ammo = {'9mm': 50, '5.56mm': 60, '7.62mm': 10, '12mm': 10}
 chests = {}
-lifes = 2
+lifes = 3
 active = 0
 step = 0
+points = 0
+level_points = 0
 size = width, height = 550, 650
 sprites = {'grass': load_image('grass.png'), 'hero': AnimatedSprite(load_image('skin2-gif.png'), 10, 2, 477, 699),
            'box': load_image('box (2).png'), 'trader': load_image('trader.png'),
@@ -978,7 +983,9 @@ sprites = {'grass': load_image('grass.png'), 'hero': AnimatedSprite(load_image('
            'snipe': load_image('snipe.png'), 'bullet_1': load_image('bullet.png'),
            'bullet_2': load_image('bullet (1).png'), 'fon': load_image('fon.png'),
            'shotgun': load_image('shotgun.png'), 'chest_inventory': load_image('chest_inventory.png'),
-           'chest': load_image('chest.png'), 'shooter': load_image('shooting.png')}
+           'chest': load_image('chest.png'), 'shooter': load_image('shooting.png'),
+           'fon-gif': AnimatedSprite(load_image('fon-gif.png'), 10, 6, 550, 650),
+           'fon-gif1': AnimatedSprite(load_image('fon-gif(1).png'), 10, 6, 550, 650)}
 channel1 = pygame.mixer.Channel(0)
 channel2 = pygame.mixer.Channel(1)
 channel3 = pygame.mixer.Channel(2)
@@ -987,9 +994,12 @@ damaged_sound1 = pygame.mixer.Sound('sounds/damaged.wav')
 damage_sound = pygame.mixer.Sound('sounds/damage.wav')
 move_sound1 = pygame.mixer.Sound('sounds/move_hero1.wav')
 cash = pygame.mixer.Sound('sounds/purchase.wav')
+death_sound = pygame.mixer.Sound('sounds/death.wav')
 chest_types = {'starter': [[guns[0], 25], [guns[1], 10], [guns[2], 2], [guns[3], 1]]}
 chest_active = ''
 trader_active = 0
+levels = ['arena', 'levelbykvadron']
+current_level = 0
 tmp_sprites = []
 bullets = []
 enemies = []
@@ -1019,7 +1029,7 @@ while running:
         if menu:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 cords = list(event.pos)
-                a = 'arena'
+                a = levels[current_level]
                 if 129 < cords[0] < 420:
                     if 161 < cords[1] < 228:
                         map_init(a)
@@ -1119,7 +1129,6 @@ while running:
                                     traders[i].y + window.dy < cords[1] < traders[i].y + traders[i].height + window.dy):
                                 trader_active = i
                                 break
-                        print(trader_active)
                     if inventory_open:
                         # перетаскивание предметов в инвентаре
                         if not grab:
@@ -1299,9 +1308,9 @@ while running:
             bullet.move()
         if hp < 1:
             lifes -= 1
-            default()
             death = True
-            tmp_sprites.append(0, 0, AnimatedSprite(load_image('fon-gif.png')), 10, 6, 550, 650)
+            death_sound.play()
+            step = -1
         for enemy in enemies:
             if (window.room_x + window.room_width > enemy.x // window.block_size > window.room_x - 1 and
                     window.room_y + window.room_height > enemy.y // window.block_size > window.room_y - 1):
@@ -1327,6 +1336,36 @@ while running:
             step = 0
         else:
             step += 1
+    if death:
+        step += 1
+        if step == 1:
+            tmp_sprites.append([0, 0, sprites['fon-gif'], 60])
+        if step == 60:
+            tmp_sprites.append([0, 0, load_image('black.jpg'), 180])
+            if lifes == 2:
+                tmp_sprites.append([125, 225, load_image('2lifes.png'), 178])
+            elif lifes == 1:
+                tmp_sprites.append([125, 225, load_image('1lifes.png'), 178])
+            else:
+                tmp_sprites.append([125, 225, load_image('0lifes.png'), 178])
+            tmp_sprites.append([0, 0, sprites['fon-gif1'], 60])
+        if step == 179:
+            tmp_sprites.append([0, 0, sprites['fon-gif'], 60])
+        for sprite in tmp_sprites:
+            if type(sprite[2]) is AnimatedSprite:
+                sprite[2].update()
+            sprite[3] -= 1
+            if sprite[3] == 0:
+                tmp_sprites.remove(sprite)
+        if len(tmp_sprites) == 0:
+            default()
+            if lifes != 0:
+                map_init(a)
+            else:
+                menu = True
+                lifes = 3
+                current_level = 0
+                points = 0
     window.render()
     pygame.display.flip()
     clock.tick(FPS)
