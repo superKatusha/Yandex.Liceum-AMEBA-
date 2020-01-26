@@ -6,17 +6,20 @@ import math
 import random
 
 
+# загрузка изображений
 def load_image(name):
     fullname = os.path.join('data', name)
     image = pygame.image.load(fullname)
     return image
 
 
+# закрытие программы
 def terminate():
     pygame.quit()
     sys.exit()
 
 
+# отрисовка меню игры
 def start_screen():
     cords = pygame.mouse.get_pos()
     screen.blit(load_image('fon1.jpg'), (0, 0))
@@ -34,6 +37,7 @@ def start_screen():
             screen.blit(load_image('menu_b5_a.png'), [129, 506])
 
 
+# отрисрвка хп и патронов
 def indicators():
     intro_text = [str(hp)]
     font = pygame.font.Font(None, 35)
@@ -60,6 +64,7 @@ def indicators():
                     [140, 575])
 
 
+# отрисовка инвентарей
 def draw_inventory():
     screen.blit(pygame.transform.scale(sprites['inventory'],
                                        (150, 650)),
@@ -125,6 +130,7 @@ def draw_inventory():
                     [cords[0] + dx, cords[1] + dy])
 
 
+# сохранение
 def save():
     with open('saves/1.txt', 'w') as file:
         tmp = []
@@ -167,6 +173,7 @@ def save():
         default()
 
 
+# сброс значений
 def default():
     global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from,\
         grab_item, menu, pause, grab, inventory_open, chest_open, difficulty, money, move_up, move_down, move_right,\
@@ -197,6 +204,7 @@ def default():
     move_left, move_right, move_up, move_down = False, False, False, False
 
 
+# загрузка сохранения
 def load():
     global a, hp, ammo, active, step, chest_active, bullets, enemies, traders, entities, inventory, x, y, grab_from, \
         grab_item, menu, pause, grab, inventory_open, chest_open, hero, difficulty, money, lifes, points, level_points
@@ -265,6 +273,7 @@ def load():
         entities = [hero, *enemies, *traders]
 
 
+# отрисовка меню паузы
 def draw_pause():
     cords = pygame.mouse.get_pos()
     screen.blit(load_image('dark.png'), [0, 0])
@@ -280,6 +289,7 @@ def draw_pause():
             screen.blit(load_image('pause_save_a.png'), [129, 344])
 
 
+# отрисовка вкладки настроек
 def draw_settings():
     cords = pygame.mouse.get_pos()
     screen.blit(sprites['fon'], [0, 0])
@@ -312,6 +322,7 @@ def draw_settings():
         screen.blit(load_image('back_to_manu.png'), [129, 367])
 
 
+# отрисовка вкаладки рекорды
 def draw_records():
     screen.blit(sprites['fon'], [0, 0])
     screen.blit(load_image('pergament.png'), [25, 25])
@@ -349,6 +360,7 @@ def draw_records():
             text_coord[1] += line_rect[3] + 30
 
 
+# отрисовка меню торговца
 def draw_trade(x, y):
     screen.blit(load_image('trader_list.png'), [x, y])
     cords = pygame.mouse.get_pos()
@@ -365,6 +377,7 @@ def draw_trade(x, y):
         screen.blit(load_image('trade_denied.png'), [x - 280, y + 150])
 
 
+# столкновения объектов
 def collision(ent, x, y):
     [x1, y1, width, height] = ent.get_rect()
     x1 += x
@@ -427,6 +440,7 @@ def collision(ent, x, y):
     return 'False'
 
 
+# чтение карты
 def map_init(a):
     global menu, hero, entities
     if os.path.exists(os.path.join('maps', a + '.txt')):
@@ -454,6 +468,7 @@ def map_init(a):
         tmp_sprites.append([0, 0, sprites['fon-gif1'], 60])
 
 
+# реализация анимации
 class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         self.frames = []
@@ -476,6 +491,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
 
 
+# класс отрисовки окна
 class Window:
     def __init__(self, size):
         global entities
@@ -622,6 +638,7 @@ class Window:
         print(self.room_x, self.room_y, self.room_width, self.room_height, self.dx, self.dy, self.scale)
 
 
+# родительский класс всех существ
 class Entity:
     def __init__(self, rect, type):
         [self.x_pos, self.y_pos, self.width_pos, self.height_pos] = rect
@@ -638,6 +655,7 @@ class Entity:
         self.delete()
 
 
+# класс торговцев
 class Trader(Entity):
     def __init__(self, x, y):
         self.width = int(round(0.7 * window.block_size))
@@ -651,6 +669,7 @@ class Trader(Entity):
         return [self.x, self.y]
 
 
+# класс игрока
 class Hero(Entity):
     def __init__(self, *cords):
         self.room_x, self.room_x1, self.room_y, self.room_y1 = 0, 0, 0, 0
@@ -800,6 +819,7 @@ class Hero(Entity):
         return [self.x, self.y]
 
 
+# класс снарядов
 class Bullet(Window):
     def __init__(self, delt, name, cords, speed, dmg):
         [self.dx, self.dy] = delt
@@ -846,6 +866,7 @@ class Bullet(Window):
         return True
 
 
+# класс врагов
 class Enemy(Entity):
     def __init__(self, x, y, name, hp, fire_rate):
         self.hp = hp
@@ -1012,11 +1033,13 @@ class Enemy(Entity):
         return [self.x, self.y]
 
 
+# родительский класс вещей
 class Item:
     def __init__(self, name):
         self.name = name
 
 
+# класс оружия
 class Weapon(Item):
     def __init__(self, b_speed, dmg, magazin, fire_rate, name, ammo, bul_count=1):
         self.b_speed = b_speed
@@ -1067,12 +1090,14 @@ class Weapon(Item):
             self.cooldown -= 1
 
 
+# класс других вещей(аптечка) - в разработке
 class Staff(Item):
     def __init__(self, name, ammo):
         self.name = name
         self.ammo = ammo
 
 
+# класс сундуков
 class Chest:
     def __init__(self, type):
         self.type = type
@@ -1167,6 +1192,7 @@ while running:
         if event.type == pygame.QUIT:
             terminate()
         if menu:
+            # нажатия на кнопки
             if event.type == pygame.MOUSEBUTTONDOWN:
                 cords = list(event.pos)
                 a = levels[current_level]
@@ -1185,6 +1211,7 @@ while running:
                     elif 506 < cords[1] < 573:
                         terminate()
         elif settings:
+            # нажатия на кнопки
             if event.type == pygame.MOUSEBUTTONDOWN:
                 cords = list(event.pos)
                 if 129 < cords[0] < 420:
@@ -1218,7 +1245,8 @@ while running:
                 if event.key == pygame.K_ESCAPE:
                     pause = False
         elif table_lid:
-            if event.type == pygame.KEYDOWN:
+            # сохранение рекорда
+            if event.type == pygame.KEYDOWN and name_input:
                 if event.key == 13:
                     with open('records/records.txt') as file:
                         x = list(map(lambda x: x.split(), file.readlines()))
@@ -1237,6 +1265,7 @@ while running:
                         name = name[:-1]
                 else:
                     name += chr(event.key)
+            # нажатия на кнопки
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 cords = list(event.pos)
                 if 129 < cords[0] < 420:
@@ -1246,6 +1275,7 @@ while running:
         else:
             # управление героем
             if event.type == pygame.KEYDOWN:
+                # управление героем
                 if not inventory_open:
                     if event.key == pygame.K_a:
                         move_left = True
@@ -1255,10 +1285,12 @@ while running:
                         move_up = True
                     elif event.key == pygame.K_s:
                         move_down = True
+                # открытие инвентаря
                 if event.key == pygame.K_i:
                     inventory_open = not inventory_open
                     chest_open = False
                     move_left, move_right, move_up, move_down = False, False, False, False
+                # горячие слоты
                 elif event.key == pygame.K_1:
                     active = 0
                     if type(inventory[active]) is Weapon:
@@ -1279,6 +1311,7 @@ while running:
                         bullets_count = -1
                 elif event.key == pygame.K_ESCAPE:
                     pause = True
+            # управление героем
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a:
                     move_left = False
@@ -1354,6 +1387,7 @@ while running:
                                         chest.inventory[y * 3 + x] = 0
                                         print('grab {} {}'.format(y, x), grab_item)
                     elif trade:
+                        # торговля
                         x = window.dx + traders[trader_active].x + traders[trader_active].width + 5
                         y = window.dy + traders[trader_active].y - 190
                         if x + 10 < cords[0] < x + 190:
@@ -1476,13 +1510,16 @@ while running:
         elif move_down:
             channel1.play(move_sound1)
             hero.move(0, 2)
+        # перемещение снарядов
         for bullet in bullets:
             bullet.move()
+        # смерть
         if hp < 1:
             lifes -= 1
             death = True
             death_sound.play()
             step = -1
+        # движение, атака, обновление задержки врагов
         for enemy in enemies:
             if (window.room_x + window.room_width > enemy.x // window.block_size > window.room_x - 1 and
                     window.room_y + window.room_height > enemy.y // window.block_size > window.room_y - 1):
@@ -1490,12 +1527,15 @@ while running:
                 enemy.atack()
                 enemy.cool()
         screen.fill((0, 0, 0))
+        # расстановка обектов согласно перспективе
         for i in range(len(entities)):
             for j in range(len(entities) - 1):
                 if entities[j].get_pos()[1] > entities[j + 1].get_pos()[1]:
                     entities[j], entities[j + 1] = entities[j + 1], entities[j]
+        # обновление статуса задержки выстрела оружия
         for weapon in guns:
             weapon.cool()
+        # обновление временных спрайтов
         for sprite in tmp_sprites:
             if type(sprite[2]) is AnimatedSprite:
                 sprite[2].update()
@@ -1508,6 +1548,7 @@ while running:
             step = 0
         else:
             step += 1
+    # анимация смерти
     if death:
         step += 1
         if step == 1:
@@ -1538,6 +1579,7 @@ while running:
                 lifes = 3
                 current_level = 0
                 points = 0
+    # анимация победы на уровне
     if victory:
         step += 1
         if step == 1:
