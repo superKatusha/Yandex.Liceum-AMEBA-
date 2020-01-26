@@ -202,7 +202,7 @@ def load():
         grab_item, menu, pause, grab, inventory_open, chest_open, hero, difficulty, money, lifes, points, level_points
     with open('saves/1.txt') as file:
         x = list(map(lambda x: x.strip(), file.readlines()))
-        difficulty = int(x[0])
+        difficulty = float(x[0])
         hp = int(x[1])
         tmp = x[2].split()
         for elem in ammo:
@@ -316,7 +316,7 @@ def draw_records():
     screen.blit(sprites['fon'], [0, 0])
     screen.blit(load_image('pergament.png'), [25, 25])
     with open('records/records.txt') as file:
-        a = file.readlines()
+        a = sorted(file.readlines(), key=lambda x: int(x.split()[1]), reverse=True)
     if len(a) > 5:
         a = a[:5]
     font = pygame.font.Font(None, 35)
@@ -999,7 +999,7 @@ class Enemy(Entity):
             if self.name == 'boss':
                 level_points += 1000
                 victory = True
-                step = 0
+                step = -1
             else:
                 level_points += 200
             money += 1
@@ -1225,7 +1225,7 @@ while running:
                     for elem in x:
                         elem[1] = int(elem[1])
                     x.append([name, points])
-                    x = sorted(x, key=lambda player: player[1])
+                    x = sorted(x, key=lambda player: player[1], reverse=True)
                     with open('records/records.txt', 'w') as file:
                         for elem in x:
                             file.write(elem[0] + ' ' + str(elem[1]) + '\n')
@@ -1541,7 +1541,7 @@ while running:
     if victory:
         step += 1
         if step == 1:
-            tmp_sprites.append([0, 0, sprites['fon-gif'], 60])
+            tmp_sprites.append([0, 0, sprites['fon-gif'], 59])
         if step == 60:
             tmp_sprites.append([0, 0, load_image('black.jpg'), 180])
             if lifes == 3:
