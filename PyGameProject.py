@@ -18,9 +18,9 @@ def terminate():
 
 
 def start_screen():
-    fon = load_image('fon1.jpg')
     cords = pygame.mouse.get_pos()
-    screen.blit(fon, (0, 0))
+    screen.blit(load_image('fon1.jpg'), (0, 0))
+    screen.blit(load_image('TombRaider.png'), (110, 20))
     if 129 < cords[0] < 420:
         if 161 < cords[1] < 228:
             screen.blit(load_image('menu_b1_a.png'), [129, 161])
@@ -136,7 +136,7 @@ def save():
         file.write(str(active) + '\n')
         file.write(str(step) + '\n')
         file.write(chest_active + '\n')
-        file.write(a + '\n')
+        file.write(str(current_level) + '\n')
         file.write(str(window.block_size) + '\n')
         file.write(' '.join([str(window.room_x), str(window.room_y), str(window.room_width), str(window.room_height)]) + '\n')
         file.write(' '.join([str(hero.x), str(hero.y)]) + '\n')
@@ -160,9 +160,9 @@ def save():
             elif type(i) is Staff:
                 tmp = ['Staff', i.name, str(i.ammo)]
             file.write(' '.join(tmp) + '\n')
-        file.write(str(money))
-        file.write(str(lifes))
-        file.write(str(points))
+        file.write(str(money) + '\n')
+        file.write(str(lifes) + '\n')
+        file.write(str(points) + '\n')
         file.write(str(level_points))
         default()
 
@@ -211,9 +211,10 @@ def load():
         active = int(x[3])
         step = int(x[4])
         chest_active = x[5]
-        a = x[6]
-        with open(os.path.join('maps', a + '.txt')) as file:
+        current_level = int(x[6])
+        with open(os.path.join('maps', levels[current_level] + '.txt')) as file:
             tmp = file.readlines()
+            tmp[0] = tmp[0].lstrip('п»ї')
             window.map_size = list(map(int, tmp[0].split()))
             window.map = list(map(list, tmp[1:]))
             for i in range(window.map_size[1]):
@@ -244,7 +245,7 @@ def load():
         for i in range(n):
             cnt += 1
             tmp = x[cnt].split()
-            traders.append(Trader(tmp[0], int(tmp[1]), int(tmp[2])))
+            traders.append(Trader(int(tmp[0]), int(tmp[1])))
         cnt += 1
         n = int(x[cnt])
         inventory = []
@@ -260,7 +261,7 @@ def load():
         money = int(x[cnt + 1])
         lifes = int(x[cnt + 2])
         points = int(x[cnt + 3])
-        level_points = int(x[cnt +4])
+        level_points = int(x[cnt + 4])
         entities = [hero, *enemies, *traders]
 
 
