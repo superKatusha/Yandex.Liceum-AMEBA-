@@ -448,7 +448,7 @@ def map_init(a):
                     enemies.append(Enemy(x, y, 'shooter', 100, 2))
                 elif window.map[i][j] == 'B':
                     window.map[i][j] = '.'
-                    enemies.append(Enemy(x, y, 'boss', 1, 1))
+                    enemies.append(Enemy(x, y, 'boss', 1000, 1))
         entities = [hero, *enemies, *traders]
         tmp_sprites.append([0, 0, sprites['fon-gif1'], 60])
 
@@ -495,6 +495,7 @@ class Window:
             a = in_file.readlines()
             for i in range(len(a)):
                 if i == 0:
+                    a[0] = a[0].lstrip('п»ї')
                     self.map_size = list(map(int, a[0].split()))
                 elif i <= self.map_size[1]:
                     self.map.append(list(a[i].rstrip()))
@@ -1134,7 +1135,7 @@ chest_active = ''
 name = ''
 trader_active = 0
 levels = ['arena', 'levelbykvadron']
-current_level = 0
+current_level = 1
 tmp_sprites = []
 bullets = []
 enemies = []
