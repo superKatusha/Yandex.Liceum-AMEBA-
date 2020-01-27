@@ -75,6 +75,7 @@ def draw_inventory():
     screen.blit(load_image('12mm.png'), [500, 450])
     screen.blit(load_image('7.62mm.png'), [500, 500])
     font = pygame.font.Font(None, 35)
+    # отрисовка индикаторов патронов и монет
     intro_text = [str(ammo['9mm'])]
     text_coord = [485, 355]
     for line in intro_text:
@@ -105,6 +106,7 @@ def draw_inventory():
         string_rendered = font.render(line, 1, (0, 0, 0))
         line_rect = string_rendered.get_rect()
         screen.blit(string_rendered, [text_coord[0] - line_rect[2], text_coord[1]])
+    # отрисовка предметов в инвенторе
     for i in range(len(inventory)):
         if inventory[i] != 0:
             if i < 3:
@@ -115,6 +117,7 @@ def draw_inventory():
                 x = 409 + 47 * (i % 3)
                 screen.blit(pygame.transform.scale(sprites[inventory[i].name], (37, 37)),
                             [x, y])
+    # отрисовка инвенторя сундука
     if chest_open:
         chest = chests[chest_active]
         screen.blit(sprites['chest_inventory'], [200, 250])
@@ -503,6 +506,7 @@ class Window:
         self.room_x, self.room_y, self.room_width, self.room_height = 0, 0, 0, 0
         self.dx, self.dy = 0, 0
 
+    # чтение карты
     def input_map(self, name):
         global chests
         self.map = []
@@ -519,7 +523,7 @@ class Window:
                     x = a[i].split()
                     chests[x[0] + ' ' + x[1]] = Chest(x[2])
 
-
+    # отрисовка
     def render(self):
         if menu:
             # меню игры
@@ -643,9 +647,11 @@ class Entity:
         [self.x_pos, self.y_pos, self.width_pos, self.height_pos] = rect
         self.type = type
 
+    # получение области коллизии существ
     def get_rect(self):
         return [self.x_pos, self.y_pos, self.width_pos, self.height_pos]
 
+    # перемещение области коллизии
     def move(self, x, y):
         self.x_pos += x
         self.y_pos += y
@@ -670,6 +676,7 @@ class Trader(Entity):
 
 # класс игрока
 class Hero(Entity):
+    # инициализация героя
     def __init__(self, *cords):
         self.room_x, self.room_x1, self.room_y, self.room_y1 = 0, 0, 0, 0
         if len(cords) == 0:
@@ -696,6 +703,7 @@ class Hero(Entity):
         self.name = 'hero'
         super().__init__([self.x, self.y + 0.5 * self.height, self.width, 0.5 * self.height], 'hero')
 
+    # перемещение героя
     def move(self, x, y):
         dx = x
         dy = y
@@ -730,6 +738,7 @@ class Hero(Entity):
         super().move(dx, dy)
         # print(dx, dy, self.x // window.block_size, self.y // window.block_size, self.x_pos, self.y_pos)
 
+    # инициализация текущей комнаты
     def room_init(self, i, j):
         for x in range(j, -1, -1):
             if window.map[i][x] in 'dD0=':
@@ -750,6 +759,7 @@ class Hero(Entity):
         print([self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y])
         window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y)
 
+    # обновление текущей комнаты
     def room_upd(self, key):
         if key == 'D':
             self.room_y = self.y // window.block_size
@@ -806,6 +816,7 @@ class Hero(Entity):
                 super().move(-window.block_size, 0)
         window.set_room(self.room_x, self.room_y, self.room_x1 - self.room_x, self.room_y1 - self.room_y)
 
+    # получение урона
     def take_damage(self, damage):
         global hp
         hp -= damage
@@ -1051,6 +1062,7 @@ class Weapon(Item):
         self.cooldown = 0
         super().__init__(self.name)
 
+    # выстрел из оружия
     def shoot(self, destination):
         if self.cooldown == 0:
             self.cooldown = (60 / self.fire_rate) // 1
@@ -1084,6 +1096,7 @@ class Weapon(Item):
                         dx, dy = math.sin(k - math.pi/12), math.cos(k - math.pi/12)
                     bullets.append(Bullet([dx, dy], 'hero', cords, self.b_speed, self.dmg))
 
+    # задержка между выстрелами
     def cool(self):
         if self.cooldown > 0:
             self.cooldown -= 1
@@ -1103,6 +1116,7 @@ class Chest:
         self.inventory = [0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.fill()
 
+    # генерация случайных вещей по шаблону
     def fill(self):
         for i in range(len(self.inventory)):
             luck = random.randint(1, 100)
